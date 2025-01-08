@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "vercel dev",
-    "build": "vercel build"
+    "start": "node api/chat.js",
+    "build": "echo 'No build step required'"
   },
   "dependencies": {
     "@vercel/node": "^3.0.0"
