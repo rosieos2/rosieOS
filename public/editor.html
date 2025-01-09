@@ -237,6 +237,24 @@ body {
     color: #00ff00;
 }
 
+.code-block {
+    background-color: #1a1a1a;
+    border-radius: 4px;
+    padding: 12px;
+    margin: 8px 0;
+    border: 1px solid #00ff00;
+}
+
+.code-block pre {
+    margin: 0;
+    white-space: pre-wrap;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.code-block code {
+    color: #00ff00;
+}
+
 .nav-subtitle {
     color: #4d4d4d;
     font-size: 12px;
@@ -683,11 +701,22 @@ function updatePreview(code, language) {
     previewWindow.innerHTML = '';
     
     if (language === 'html') {
-        // For HTML, directly inject the code
-        previewWindow.innerHTML = code;
+        // For HTML, create a sandboxed iframe
+        const iframe = document.createElement('iframe');
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        previewWindow.appendChild(iframe);
+        
+        // Write the HTML content to the iframe
+        iframe.contentDocument.open();
+        iframe.contentDocument.write(code);
+        iframe.contentDocument.close();
+        
     } else if (language === 'javascript') {
-        // For JavaScript games/apps, create a contained environment
+        // For JavaScript, create a contained environment
         const container = document.createElement('div');
+        container.id = 'js-preview-container';
         container.style.width = '100%';
         container.style.height = '100%';
         previewWindow.appendChild(container);
@@ -697,7 +726,10 @@ function updatePreview(code, language) {
             const script = document.createElement('script');
             script.textContent = `
                 try {
-                    ${code}
+                    (function() {
+                        const container = document.getElementById('js-preview-container');
+                        ${code}
+                    })();
                 } catch (error) {
                     console.error('Preview error:', error);
                 }
@@ -705,6 +737,7 @@ function updatePreview(code, language) {
             container.appendChild(script);
         } catch (error) {
             console.error('Error executing preview:', error);
+            container.innerHTML = `<div style="color: #ff0000;">Error: ${error.message}</div>`;
         }
     }
 }
@@ -723,29 +756,30 @@ function appendMessage(message, sender) {
                 const match = part.match(/```(\w+)?\n?([\s\S]*?)```/);
                 if (match) {
                     const language = match[1] || '';
-                    const code = match[2];
+                    const code = match[2].trim();
                     
-                    // Check if code is renderable and update preview
-                    if (language === 'html' || language === 'javascript') {
-                        updatePreview(code, language);
-                    }
-                    
+                    // Create code block
                     const codeWrapper = document.createElement('div');
                     codeWrapper.className = 'code-block';
                     
+                    const pre = document.createElement('pre');
                     const codeElement = document.createElement('code');
-                    if (language) {
-                        codeElement.className = `language-${language}`;
-                    }
+                    codeElement.className = `language-${language}`;
                     codeElement.textContent = code;
                     
-                    const pre = document.createElement('pre');
                     pre.appendChild(codeElement);
                     codeWrapper.appendChild(pre);
                     messageDiv.appendChild(codeWrapper);
+                    
+                    // Update preview if it's HTML or JavaScript
+                    if (language === 'html' || language === 'javascript') {
+                        console.log(`Updating preview with ${language} code`);
+                        updatePreview(code, language);
+                    }
                 }
             } else if (part.trim()) {
                 const textDiv = document.createElement('div');
+                textDiv.className = 'text-content';
                 if (sender === 'agent') {
                     typeWriter(part, textDiv);
                 } else {
