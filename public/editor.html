@@ -676,6 +676,103 @@ body {
     }
 }
 
+function updatePreview(code, language) {
+    const previewWindow = document.querySelector('.terminal-window.preview .content');
+    
+    // Clear previous content
+    previewWindow.innerHTML = '';
+    
+    if (language === 'html') {
+        // For HTML, directly inject the code
+        previewWindow.innerHTML = code;
+    } else if (language === 'javascript') {
+        // For JavaScript games/apps, create a contained environment
+        const container = document.createElement('div');
+        container.style.width = '100%';
+        container.style.height = '100%';
+        previewWindow.appendChild(container);
+        
+        try {
+            // Create a safe execution environment
+            const script = document.createElement('script');
+            script.textContent = `
+                try {
+                    ${code}
+                } catch (error) {
+                    console.error('Preview error:', error);
+                }
+            `;
+            container.appendChild(script);
+        } catch (error) {
+            console.error('Error executing preview:', error);
+        }
+    }
+}
+
+// Modify the appendMessage function to include preview handling
+function appendMessage(message, sender) {
+    const chatOutput = document.querySelector('.chat-output');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}-message`;
+    
+    if (message.includes('```')) {
+        const parts = message.split(/(```[\s\S]*?```)/g);
+        
+        parts.forEach(part => {
+            if (part.startsWith('```')) {
+                const match = part.match(/```(\w+)?\n?([\s\S]*?)```/);
+                if (match) {
+                    const language = match[1] || '';
+                    const code = match[2];
+                    
+                    // Check if code is renderable and update preview
+                    if (language === 'html' || language === 'javascript') {
+                        updatePreview(code, language);
+                    }
+                    
+                    const codeWrapper = document.createElement('div');
+                    codeWrapper.className = 'code-block';
+                    
+                    const codeElement = document.createElement('code');
+                    if (language) {
+                        codeElement.className = `language-${language}`;
+                    }
+                    codeElement.textContent = code;
+                    
+                    const pre = document.createElement('pre');
+                    pre.appendChild(codeElement);
+                    codeWrapper.appendChild(pre);
+                    messageDiv.appendChild(codeWrapper);
+                }
+            } else if (part.trim()) {
+                const textDiv = document.createElement('div');
+                if (sender === 'agent') {
+                    typeWriter(part, textDiv);
+                } else {
+                    textDiv.textContent = part;
+                }
+                messageDiv.appendChild(textDiv);
+            }
+        });
+    } else {
+        if (sender === 'agent') {
+            typeWriter(message, messageDiv);
+        } else {
+            messageDiv.textContent = message;
+        }
+    }
+
+    chatOutput.appendChild(messageDiv);
+    chatOutput.scrollTop = chatOutput.scrollHeight;
+}
+
+function typeWriter(text, element, index = 0) {
+    if (index < text.length) {
+        element.textContent += text.charAt(index);
+        setTimeout(() => typeWriter(text, element, index + 1), 20); // Adjust speed by changing timeout
+    }
+}
+
 function appendMessage(message, sender) {
     const chatOutput = document.querySelector('.chat-output');
     const messageDiv = document.createElement('div');
@@ -710,12 +807,22 @@ function appendMessage(message, sender) {
                 }
             } else if (part.trim()) {
                 const textDiv = document.createElement('div');
-                textDiv.textContent = part;
+                if (sender === 'agent') {
+                    // Use typewriter effect for agent messages
+                    typeWriter(part, textDiv);
+                } else {
+                    textDiv.textContent = part;
+                }
                 messageDiv.appendChild(textDiv);
             }
         });
     } else {
-        messageDiv.textContent = message;
+        if (sender === 'agent') {
+            // Use typewriter effect for agent messages
+            typeWriter(message, messageDiv);
+        } else {
+            messageDiv.textContent = message;
+        }
     }
 
     chatOutput.appendChild(messageDiv);
