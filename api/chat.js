@@ -1,6 +1,5 @@
 // api/chat.js
 export default async function handler(req, res) {
-    // Handle CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -18,6 +17,13 @@ export default async function handler(req, res) {
 
     try {
         const { message } = req.body;
+        
+        // Add specific instruction for code examples
+        const enhancedMessage = message.toLowerCase().includes('create') || 
+                              message.toLowerCase().includes('make') || 
+                              message.toLowerCase().includes('generate') 
+            ? `${message} Please keep the example minimal and under 100 lines of code.`
+            : message;
 
         const response = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
@@ -31,20 +37,22 @@ export default async function handler(req, res) {
                 max_tokens: 1024,
                 messages: [{
                     role: 'user',
-                    content: message
+                    content: enhancedMessage
                 }],
-                system: "You are a web development AI assistant. Keep responses concise and focused. When showing code examples, make them minimal but functional."
+                system: "You are a web development AI assistant. When providing code examples, keep them minimal, functional, and under 100 lines. Focus on core functionality first.",
+                temperature: 0.7
             })
         });
 
         if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
+            const errorData = await response.text();
+            throw new Error(errorData);
         }
 
         const data = await response.json();
         res.status(200).json(data);
     } catch (error) {
         console.error('Error:', error);
-        res.status(500).json({ error: 'Error processing request' });
+        res.status(500).json({ error: error.message });
     }
 }
