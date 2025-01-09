@@ -652,10 +652,12 @@ body {
     </main>
     <script>
         async function sendMessage() {
+    console.log('Message being sent');
     const input = document.querySelector('.input-line input');
     const message = input.value.trim();
     
     if (message) {
+        console.log('Sending message:', message);
         appendMessage(message, 'user');
         input.value = '';
 
@@ -664,28 +666,23 @@ body {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json',
                 },
                 body: JSON.stringify({ 
                     message,
-                    systemPrompt: `You are an AI development assistant focused on helping with web development, coding, and technical tasks. Keep responses focused, direct, and precise. Always wrap code examples in triple backticks with the appropriate language tag (e.g. \`\`\`javascript).`
-                }),
-                credentials: 'same-origin'
+                    systemPrompt: `You are an AI development assistant focused on helping with web development, coding, and technical tasks. Keep responses focused, direct, and precise. Always wrap code examples in triple backticks with the appropriate language tag (e.g. \`\`\`html).`
+                })
             });
 
-            if (!response.ok) {
-                const errorData = await response.text();
-                console.error('API error:', errorData);
-                throw new Error('API request failed');
-            }
-
             const data = await response.json();
+            console.log('Response received:', data);
             
-            if (data.content && data.content[0] && data.content[0].text) {
-                appendMessage(data.content[0].text, 'agent');
-            } else {
-                console.error('Unexpected API response:', data);
-                appendMessage('Sorry, I encountered an error processing your request.', 'agent');
+            if (data.content && Array.isArray(data.content)) {
+                data.content.forEach(part => {
+                    if (part.type === 'text') {
+                        console.log('Processing text response:', part.text);
+                        appendMessage(part.text, 'agent');
+                    }
+                });
             }
         } catch (error) {
             console.error('Error:', error);
