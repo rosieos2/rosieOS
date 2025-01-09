@@ -651,7 +651,7 @@ body {
          </div>
     </main>
     <script>
-        async function sendMessage() {
+async function sendMessage() {
     console.log('Message being sent');
     const input = document.querySelector('.input-line input');
     const message = input.value.trim();
@@ -747,46 +747,51 @@ function updatePreview(code, language) {
 function typeWriter(text, element, index = 0) {
     if (index < text.length) {
         element.textContent += text.charAt(index);
-        setTimeout(() => typeWriter(text, element, index + 1), 20); // Adjust speed by changing timeout
+        setTimeout(() => typeWriter(text, element, index + 1), 20);
     }
 }
 
 function appendMessage(message, sender) {
+    console.log('appendMessage called for sender:', sender);
     const chatOutput = document.querySelector('.chat-output');
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${sender}-message`;
     
-    // Handle code blocks
     if (message.includes('```')) {
+        console.log('Code block detected');
         const parts = message.split(/(```[\s\S]*?```)/g);
         
         parts.forEach(part => {
             if (part.startsWith('```')) {
-                // Extract code and language
                 const match = part.match(/```(\w+)?\n?([\s\S]*?)```/);
                 if (match) {
                     const language = match[1] || '';
-                    const code = match[2];
+                    const code = match[2].trim();
+                    console.log('Detected language:', language);
                     
+                    // Create code block
                     const codeWrapper = document.createElement('div');
                     codeWrapper.className = 'code-block';
                     
-                    // Create the code element
+                    const pre = document.createElement('pre');
                     const codeElement = document.createElement('code');
-                    if (language) {
-                        codeElement.className = `language-${language}`;
-                    }
+                    codeElement.className = `language-${language}`;
                     codeElement.textContent = code;
                     
-                    const pre = document.createElement('pre');
                     pre.appendChild(codeElement);
                     codeWrapper.appendChild(pre);
                     messageDiv.appendChild(codeWrapper);
+                    
+                    // Update preview if it's HTML or JavaScript
+                    if (language === 'html' || language === 'javascript') {
+                        console.log('Calling updatePreview with language:', language);
+                        updatePreview(code, language);
+                    }
                 }
             } else if (part.trim()) {
                 const textDiv = document.createElement('div');
+                textDiv.className = 'text-content';
                 if (sender === 'agent') {
-                    // Use typewriter effect for agent messages
                     typeWriter(part, textDiv);
                 } else {
                     textDiv.textContent = part;
@@ -796,7 +801,6 @@ function appendMessage(message, sender) {
         });
     } else {
         if (sender === 'agent') {
-            // Use typewriter effect for agent messages
             typeWriter(message, messageDiv);
         } else {
             messageDiv.textContent = message;
@@ -807,23 +811,23 @@ function appendMessage(message, sender) {
     chatOutput.scrollTop = chatOutput.scrollHeight;
 }
 
-    // Initialize chat functionality
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log('Page loaded');
-        document.querySelector('.terminal-window.preview .content').innerHTML = 'Preview window ready';
-        
-        const input = document.querySelector('.input-line input');
-        
-        // Add enter key handler
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-
-        // Add initial message
-        appendMessage('Hello! I\'m your AI development assistant. How can I help you today?', 'agent');
+// Initialize chat functionality
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Page loaded');
+    document.querySelector('.terminal-window.preview .content').innerHTML = 'Preview window ready';
+    
+    const input = document.querySelector('.input-line input');
+    
+    // Add enter key handler
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
     });
+
+    // Add initial message
+    appendMessage('Hello! I\'m your AI development assistant. How can I help you today?', 'agent');
+});
     </script>
 </body>
 </html>
