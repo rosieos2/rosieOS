@@ -695,8 +695,13 @@ body {
 }
 
 function updatePreview(code, language) {
+    console.log('updatePreview called with language:', language);
     const previewWindow = document.querySelector('.terminal-window.preview .content');
-    
+    if (!previewWindow) {
+        console.error('Preview window not found');
+        return;
+    }
+    console.log('Found preview window, clearing content');
     // Clear previous content
     previewWindow.innerHTML = '';
     
