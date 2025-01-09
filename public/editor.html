@@ -724,20 +724,39 @@ async function sendMessage() {
                 },
                 body: JSON.stringify({ 
                     message,
-                    systemPrompt: `You are an AI development assistant focused on helping with web development, coding, and technical tasks. Keep responses focused, direct, and precise. Always wrap code examples in triple backticks with the appropriate language tag (e.g. \`\`\`html).`
+                    systemPrompt: `You are an AI web development assistant that focuses on writing code rather than explaining it. When asked to create or modify something:
+1. Directly provide the needed code without lengthy explanations
+2. Always wrap code in appropriate language tags (e.g. \`\`\`html, \`\`\`javascript, \`\`\`css)
+3. When modifying existing code, provide the complete updated version of the file
+4. Only provide brief, one-line comments about what the code does
+5. If a user asks how to do something, show them by writing the code rather than explaining the steps
+6. Keep responses focused on the code implementation
+7. For HTML modifications, unless specified otherwise, only provide the new elements to be added, not the entire HTML document
+8. When asked to add features, provide only the new code needed, not a full explanation
+9. If someone asks how something works, demonstrate with code instead of explaining in words`
                 })
             });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
 
             const data = await response.json();
             console.log('Response received:', data);
             
             if (data.content && Array.isArray(data.content)) {
-                data.content.forEach(part => {
+                for (const part of data.content) {
                     if (part.type === 'text') {
                         console.log('Processing text response:', part.text);
                         appendMessage(part.text, 'agent');
                     }
-                });
+                }
+            } else {
+                // Fallback for different response format
+                const text = data.content ? 
+                    (typeof data.content === 'string' ? data.content : data.content.text) 
+                    : 'Received empty response';
+                appendMessage(text, 'agent');
             }
         } catch (error) {
             console.error('Error:', error);
@@ -753,33 +772,47 @@ function updatePreview(code, language) {
         console.error('Preview window not found');
         return;
     }
-    console.log('Found preview window, clearing content');
-    // Clear previous content
-    previewWindow.innerHTML = '';
-    
+
     if (language === 'html') {
-        // For HTML, create a sandboxed iframe
-        const iframe = document.createElement('iframe');
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-        iframe.style.border = 'none';
-        previewWindow.appendChild(iframe);
+        // For HTML, either create or get the existing iframe
+        let iframe = previewWindow.querySelector('iframe');
+        if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            iframe.style.border = 'none';
+            previewWindow.appendChild(iframe);
+        }
+
+        // Get existing content or create new document
+        const existingContent = iframe.contentDocument.body ? iframe.contentDocument.body.innerHTML : '';
         
-        // Write the HTML content to the iframe
-        iframe.contentDocument.open();
-        iframe.contentDocument.write(code);
-        iframe.contentDocument.close();
+        // If it's a full HTML document (contains <html> tag), replace everything
+        if (code.includes('<html>') || code.includes('<!DOCTYPE')) {
+            iframe.contentDocument.open();
+            iframe.contentDocument.write(code);
+            iframe.contentDocument.close();
+        } else {
+            // Otherwise, append the new content to body
+            if (!iframe.contentDocument.body) {
+                iframe.contentDocument.write('<html><body></body></html>');
+            }
+            iframe.contentDocument.body.innerHTML += code;
+        }
         
     } else if (language === 'javascript') {
-        // For JavaScript, create a contained environment
-        const container = document.createElement('div');
-        container.id = 'js-preview-container';
-        container.style.width = '100%';
-        container.style.height = '100%';
-        previewWindow.appendChild(container);
+        // For JavaScript, create or get the container
+        let container = previewWindow.querySelector('#js-preview-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'js-preview-container';
+            container.style.width = '100%';
+            container.style.height = '100%';
+            previewWindow.appendChild(container);
+        }
         
         try {
-            // Create a safe execution environment
+            // Execute the new JavaScript code
             const script = document.createElement('script');
             script.textContent = `
                 try {
@@ -794,7 +827,7 @@ function updatePreview(code, language) {
             container.appendChild(script);
         } catch (error) {
             console.error('Error executing preview:', error);
-            container.innerHTML = `<div style="color: #ff0000;">Error: ${error.message}</div>`;
+            container.innerHTML += `<div style="color: #ff0000;">Error: ${error.message}</div>`;
         }
     }
 }
