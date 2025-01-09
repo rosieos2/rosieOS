@@ -203,6 +203,9 @@ body {
     padding: 12px;
     max-width: 600px;
     max-height: 400px;
+    white-space: pre;
+    font-family: 'JetBrains Mono', monospace;
+    tab-size: 4;
     overflow: auto;
     z-index: 1000;
     display: none;
@@ -766,79 +769,61 @@ async function sendMessage() {
 }
 
 function updatePreview(code, language) {
-    const projectFiles = window.projectFiles || { files: [] };  // Access the global projectFiles
-    console.log('updatePreview called with language:', language);
     const previewWindow = document.querySelector('.terminal-window.preview .content');
-    if (!previewWindow) {
-        console.error('Preview window not found');
-        return;
+    let iframe = previewWindow.querySelector('iframe');
+    
+    if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        // Create a sandbox for the preview
+        iframe.sandbox = 'allow-scripts';
+        previewWindow.appendChild(iframe);
     }
 
-    if (language === 'html') {
-        // For HTML, either create or get the existing iframe
-        let iframe = previewWindow.querySelector('iframe');
-        if (!iframe) {
-            iframe = document.createElement('iframe');
-            iframe.style.width = '100%';
-            iframe.style.height = '100%';
-            iframe.style.border = 'none';
-            previewWindow.appendChild(iframe);
-        }
+    // Build HTML document with current state of all files
+    let cssContent = projectFiles.files.find(f => f.path === 'styles/main.css')?.content || '';
+    let htmlContent = projectFiles.files.find(f => f.path === 'index.html')?.content || '';
+    let jsContent = projectFiles.files.find(f => f.path === 'scripts/app.js')?.content || '';
 
-        // Always create a fresh document with all current content
-        iframe.contentDocument.open();
-        
-        // Get the current CSS file if it exists
-        const cssFile = projectFiles.files.find(f => f.path === 'styles/main.css');
-        const cssContent = cssFile ? cssFile.content : '';
-        
-        // Get the current HTML file
-        const htmlFile = projectFiles.files.find(f => f.path === 'index.html');
-        const htmlContent = htmlFile ? htmlFile.content : code;
-
-        // Write the complete document
-        iframe.contentDocument.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <style>${cssContent}</style>
-            </head>
-            <body>
-                ${htmlContent.includes('<!DOCTYPE html>') ? htmlContent : code}
-            </body>
-            </html>
-        `);
-        iframe.contentDocument.close();
-        
-    } else if (language === 'javascript') {
-        // For JavaScript, create or get the container
-        let container = previewWindow.querySelector('#js-preview-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'js-preview-container';
-            container.style.width = '100%';
-            container.style.height = '100%';
-            previewWindow.appendChild(container);
-        }
-        
-        try {
-            // Execute the new JavaScript code
-            const script = document.createElement('script');
-            script.textContent = `
-                try {
-                    (function() {
-                        const container = document.getElementById('js-preview-container');
-                        ${code}
-                    })();
-                } catch (error) {
-                    console.error('Preview error:', error);
+    // Create a completely isolated document
+    const fullContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                /* Reset styles to prevent leakage */
+                html, body {
+                    margin: 0;
+                    padding: 0;
+                    width: 100%;
+                    height: 100%;
                 }
-            `;
-            container.appendChild(script);
-        } catch (error) {
-            console.error('Error executing preview:', error);
-            container.innerHTML += `<div style="color: #ff0000;">Error: ${error.message}</div>`;
-        }
+                * { box-sizing: border-box; }
+                /* Current CSS */
+                ${cssContent}
+            </style>
+        </head>
+        <body>
+            <!-- Current HTML -->
+            ${htmlContent.includes('<!DOCTYPE html>') ? 
+                htmlContent.replace(/<html[\s\S]*<body[^>]*>/, '').replace(/<\/body>[\s\S]*<\/html>/, '') :
+                htmlContent
+            }
+            <!-- Current JavaScript -->
+            <script>
+                ${jsContent}
+            </script>
+        </body>
+        </html>
+    `;
+
+    // Update the iframe content
+    if (iframe.contentWindow) {
+        iframe.srcdoc = fullContent;
+    } else {
+        console.error('No iframe contentWindow available');
     }
 }
 
@@ -850,13 +835,11 @@ function typeWriter(text, element, index = 0) {
 }
 
 function appendMessage(message, sender) {
-    console.log('appendMessage called for sender:', sender);
     const chatOutput = document.querySelector('.chat-output');
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${sender}-message`;
     
     if (message.includes('```')) {
-        console.log('Code block detected');
         const parts = message.split(/(```[\s\S]*?```)/g);
         
         parts.forEach(part => {
@@ -865,9 +848,7 @@ function appendMessage(message, sender) {
                 if (match) {
                     const language = match[1] || '';
                     const code = match[2].trim();
-                    console.log('Detected language:', language);
                     
-                    // Determine file type and path based on language
                     let filePath;
                     switch(language.toLowerCase()) {
                         case 'html':
@@ -884,38 +865,13 @@ function appendMessage(message, sender) {
                         case 'css':
                             filePath = 'styles/main.css';
                             break;
-                        case 'jsx':
-                        case 'react':
-                            filePath = 'components/App.jsx';
-                            break;
-                        case 'ts':
-                        case 'typescript':
-                            filePath = 'src/index.ts';
-                            break;
                     }
 
-                    // Add file to structure if we have a valid path
                     if (filePath) {
-                        console.log('Adding file to structure:', filePath);
                         window.addFile(filePath, code);
                     }
                     
-                    // Create code block in chat
-                    const codeWrapper = document.createElement('div');
-                    codeWrapper.className = 'code-block';
-                    
-                    const pre = document.createElement('pre');
-                    const codeElement = document.createElement('code');
-                    codeElement.className = `language-${language}`;
-                    codeElement.textContent = code;
-                    
-                    pre.appendChild(codeElement);
-                    codeWrapper.appendChild(pre);
-                    messageDiv.appendChild(codeWrapper);
-                    
-                    // Update preview if it's HTML or JavaScript
                     if (language === 'html' || language === 'javascript') {
-                        console.log('Calling updatePreview with language:', language);
                         updatePreview(code, language);
                     }
                 }
