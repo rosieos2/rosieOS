@@ -766,6 +766,7 @@ async function sendMessage() {
 }
 
 function updatePreview(code, language) {
+    const projectFiles = window.projectFiles || { files: [] };  // Access the global projectFiles
     console.log('updatePreview called with language:', language);
     const previewWindow = document.querySelector('.terminal-window.preview .content');
     if (!previewWindow) {
@@ -784,21 +785,30 @@ function updatePreview(code, language) {
             previewWindow.appendChild(iframe);
         }
 
-        // Get existing content or create new document
-        const existingContent = iframe.contentDocument.body ? iframe.contentDocument.body.innerHTML : '';
+        // Always create a fresh document with all current content
+        iframe.contentDocument.open();
         
-        // If it's a full HTML document (contains <html> tag), replace everything
-        if (code.includes('<html>') || code.includes('<!DOCTYPE')) {
-            iframe.contentDocument.open();
-            iframe.contentDocument.write(code);
-            iframe.contentDocument.close();
-        } else {
-            // Otherwise, append the new content to body
-            if (!iframe.contentDocument.body) {
-                iframe.contentDocument.write('<html><body></body></html>');
-            }
-            iframe.contentDocument.body.innerHTML += code;
-        }
+        // Get the current CSS file if it exists
+        const cssFile = projectFiles.files.find(f => f.path === 'styles/main.css');
+        const cssContent = cssFile ? cssFile.content : '';
+        
+        // Get the current HTML file
+        const htmlFile = projectFiles.files.find(f => f.path === 'index.html');
+        const htmlContent = htmlFile ? htmlFile.content : code;
+
+        // Write the complete document
+        iframe.contentDocument.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>${cssContent}</style>
+            </head>
+            <body>
+                ${htmlContent.includes('<!DOCTYPE html>') ? htmlContent : code}
+            </body>
+            </html>
+        `);
+        iframe.contentDocument.close();
         
     } else if (language === 'javascript') {
         // For JavaScript, create or get the container
@@ -983,11 +993,43 @@ function addFile(filePath, content) {
         projectFiles.folders.add(currentPath);
     }
     
-    // Add the file
-    projectFiles.files.push({
-        path: filePath,
-        content: content
-    });
+    // Find existing file or add new one
+    const existingFileIndex = projectFiles.files.findIndex(f => f.path === filePath);
+    if (existingFileIndex !== -1) {
+        // Update existing file content
+        if (filePath === 'index.html' && !content.includes('<!DOCTYPE html>')) {
+            // For HTML, append new content to existing body
+            const existingContent = projectFiles.files[existingFileIndex].content;
+            if (existingContent.includes('</body>')) {
+                const newContent = existingContent.replace('</body>', content + '\n</body>');
+                projectFiles.files[existingFileIndex].content = newContent;
+            } else {
+                projectFiles.files[existingFileIndex].content += '\n' + content;
+            }
+        } else {
+            // For other files, update content
+            projectFiles.files[existingFileIndex].content = content;
+        }
+    } else {
+        // Add new file
+        if (filePath === 'index.html' && !content.includes('<!DOCTYPE html>')) {
+            // Wrap partial HTML in full document
+            content = `<!DOCTYPE html>
+<html>
+<head>
+    <title>My App</title>
+    <link rel="stylesheet" href="/styles/main.css">
+</head>
+<body>
+    ${content}
+</body>
+</html>`;
+        }
+        projectFiles.files.push({
+            path: filePath,
+            content: content
+        });
+    }
     
     updateStructureDisplay();
 }
