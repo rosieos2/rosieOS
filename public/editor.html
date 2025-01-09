@@ -749,11 +749,13 @@ function updatePreview(code, language) {
 
 // Modify the appendMessage function to include preview handling
 function appendMessage(message, sender) {
+    console.log('appendMessage called for sender:', sender);
     const chatOutput = document.querySelector('.chat-output');
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${sender}-message`;
     
     if (message.includes('```')) {
+        console.log('Code block detected');
         const parts = message.split(/(```[\s\S]*?```)/g);
         
         parts.forEach(part => {
@@ -762,6 +764,7 @@ function appendMessage(message, sender) {
                 if (match) {
                     const language = match[1] || '';
                     const code = match[2].trim();
+                    console.log('Detected language:', language);
                     
                     // Create code block
                     const codeWrapper = document.createElement('div');
@@ -778,7 +781,7 @@ function appendMessage(message, sender) {
                     
                     // Update preview if it's HTML or JavaScript
                     if (language === 'html' || language === 'javascript') {
-                        console.log(`Updating preview with ${language} code`);
+                        console.log('Calling updatePreview with language:', language);
                         updatePreview(code, language);
                     }
                 }
