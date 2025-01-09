@@ -49,16 +49,17 @@
     50% { opacity: 0; }
 }
 
-html, body {
-    margin: 0;
-    padding: 0;
+html {
     height: 100vh;
     background-color: #000000;
     color: #fff;
-    overflow: hidden;
 }
 
 body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden;
     display: flex;
 }
 
@@ -203,13 +204,12 @@ body {
 
 .main-content {
     flex: 1;
-    padding: 0;
-    background-color: #000000;
-    min-height: 100vh;
+    margin-left: 240px; /* Only match sidebar width */
     display: flex;
     flex-direction: column;
-    padding-bottom: 40px;
-    margin-left: 240px; /* Just match the sidebar width */
+    align-items: center; /* Center content horizontally */
+    justify-content: flex-start; /* Align to top */
+    padding: 0 20px; /* Add some padding on sides */
 }
 
 .title {
@@ -229,7 +229,7 @@ body {
 
 .terminal-section {
     width: 100%;
-    max-width: 1200px;
+    max-width: 800px; /* or whatever max-width you prefer */
     margin: 0 auto;
 }
 
@@ -251,6 +251,13 @@ body {
     flex-direction: column;
     box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
     backdrop-filter: blur(5px);
+}
+
+.spline-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .terminal-text {
