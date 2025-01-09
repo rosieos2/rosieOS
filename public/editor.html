@@ -247,12 +247,16 @@ body {
 
 .main-content {
     flex: 1;
-    padding: 0;
     background-color: #000000;
-    width: calc(100% - 240px);  /* Subtract sidebar width */
+    width: 100%;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow-x: hidden;
+    padding: 40px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 0;
 }
 
 .terminal-grid {
