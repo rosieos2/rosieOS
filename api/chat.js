@@ -1,5 +1,6 @@
 // api/chat.js
 export default async function handler(req, res) {
+    // Handle CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -16,43 +17,41 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { message } = req.body;
+        const { message, systemPrompt } = req.body;
         
-        // Add specific instruction for code examples
-        const enhancedMessage = message.toLowerCase().includes('create') || 
-                              message.toLowerCase().includes('make') || 
-                              message.toLowerCase().includes('generate') 
-            ? `${message} Please keep the example minimal and under 100 lines of code.`
-            : message;
+        // Log the API key presence (not the actual key)
+        console.log('API Key present:', !!process.env.ANTHROPIC_API_KEY);
 
         const response = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'anthropic-version': '2023-06-01',
-                'x-api-key': process.env.ANTHROPIC_API_KEY
+                'x-api-key': process.env.ANTHROPIC_API_KEY,
+                'anthropic-beta': 'messages-2023-12-15'
             },
             body: JSON.stringify({
                 model: 'claude-3-opus-20240229',
-                max_tokens: 1024,
                 messages: [{
                     role: 'user',
-                    content: enhancedMessage
+                    content: message
                 }],
-                system: "You are a web development AI assistant. When providing code examples, keep them minimal, functional, and under 100 lines. Focus on core functionality first.",
+                system: systemPrompt,
+                max_tokens: 1000,
                 temperature: 0.7
             })
         });
 
         if (!response.ok) {
             const errorData = await response.text();
+            console.error('Anthropic API error:', errorData);
             throw new Error(errorData);
         }
 
         const data = await response.json();
         res.status(200).json(data);
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Server error:', error);
         res.status(500).json({ error: error.message });
     }
 }
