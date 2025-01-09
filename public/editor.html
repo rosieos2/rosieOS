@@ -165,6 +165,61 @@ body {
     color: #00ffff;
 }
 
+.structure-tree {
+    padding: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #00ff00;
+}
+
+.structure-item {
+    padding: 4px 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.structure-item:hover {
+    background: rgba(0, 255, 0, 0.1);
+}
+
+.structure-folder {
+    margin-left: 20px;
+}
+
+.structure-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.file-preview {
+    position: fixed;
+    background: #1a1a1a;
+    border: 1px solid #00ff00;
+    border-radius: 4px;
+    padding: 12px;
+    max-width: 600px;
+    max-height: 400px;
+    overflow: auto;
+    z-index: 1000;
+    display: none;
+    font-family: 'JetBrains Mono', monospace;
+    color: #00ff00;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+}
+
+.file-preview pre {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+.file-preview code {
+    font-family: 'JetBrains Mono', monospace;
+}
+
 .logo-text {
     display: flex;
     flex-direction: column;
@@ -769,7 +824,40 @@ function appendMessage(message, sender) {
                     const code = match[2].trim();
                     console.log('Detected language:', language);
                     
-                    // Create code block
+                    // Determine file type and path based on language
+                    let filePath;
+                    switch(language.toLowerCase()) {
+                        case 'html':
+                            filePath = 'index.html';
+                            break;
+                        case 'javascript':
+                        case 'js':
+                            if (code.includes('export default async function handler')) {
+                                filePath = 'api/chat.js';
+                            } else {
+                                filePath = 'scripts/app.js';
+                            }
+                            break;
+                        case 'css':
+                            filePath = 'styles/main.css';
+                            break;
+                        case 'jsx':
+                        case 'react':
+                            filePath = 'components/App.jsx';
+                            break;
+                        case 'ts':
+                        case 'typescript':
+                            filePath = 'src/index.ts';
+                            break;
+                    }
+
+                    // Add file to structure if we have a valid path
+                    if (filePath) {
+                        console.log('Adding file to structure:', filePath);
+                        window.addFile(filePath, code);
+                    }
+                    
+                    // Create code block in chat
                     const codeWrapper = document.createElement('div');
                     codeWrapper.className = 'code-block';
                     
@@ -828,6 +916,178 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add initial message
     appendMessage('Hello! I\'m your AI development assistant. How can I help you today?', 'agent');
 });
+
+const projectFiles = {
+    files: [],
+    folders: new Set()
+};
+
+function initializeStructure() {
+    const structureWindow = document.querySelector('.terminal-window.structure .content');
+    const filePreview = document.createElement('div');
+    filePreview.className = 'file-preview';
+    document.body.appendChild(filePreview);
+
+    // Clear existing content and add empty structure tree
+    structureWindow.innerHTML = '';
+    const treeDiv = document.createElement('div');
+    treeDiv.className = 'structure-tree';
+    structureWindow.appendChild(treeDiv);
+
+    updateStructureDisplay();
+}
+
+function addFile(filePath, content) {
+    console.log('Adding file:', filePath);
+    
+    // Create folders for the file path
+    const parts = filePath.split('/');
+    let currentPath = '';
+    
+    // Add all folders in the path
+    for (let i = 0; i < parts.length - 1; i++) {
+        currentPath += (currentPath ? '/' : '') + parts[i];
+        projectFiles.folders.add(currentPath);
+    }
+    
+    // Add the file
+    projectFiles.files.push({
+        path: filePath,
+        content: content
+    });
+    
+    updateStructureDisplay();
+}
+
+function updateStructureDisplay() {
+    const treeDiv = document.querySelector('.structure-tree');
+    if (!treeDiv) return;
+
+    // Clear existing content
+    treeDiv.innerHTML = '';
+
+    // Build folder structure
+    const structure = {
+        name: 'project-root',
+        type: 'folder',
+        children: {}
+    };
+
+    // Add folders
+    Array.from(projectFiles.folders).sort().forEach(folder => {
+        let current = structure;
+        folder.split('/').forEach(part => {
+            if (!current.children[part]) {
+                current.children[part] = {
+                    name: part,
+                    type: 'folder',
+                    children: {}
+                };
+            }
+            current = current.children[part];
+        });
+    });
+
+    // Add files
+    projectFiles.files.forEach(file => {
+        let current = structure;
+        const parts = file.path.split('/');
+        const fileName = parts.pop();
+        
+        parts.forEach(part => {
+            if (!current.children[part]) {
+                current.children[part] = {
+                    name: part,
+                    type: 'folder',
+                    children: {}
+                };
+            }
+            current = current.children[part];
+        });
+
+        current.children[fileName] = {
+            name: fileName,
+            type: 'file',
+            content: file.content
+        };
+    });
+
+    // Create HTML structure
+    function createStructureHTML(item, level = 0) {
+        const div = document.createElement('div');
+        
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'structure-item';
+        itemDiv.style.paddingLeft = `${level * 20}px`;
+
+        // Add icon
+        const icon = document.createElement('span');
+        icon.className = 'structure-icon';
+        icon.innerHTML = item.type === 'folder' 
+            ? '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"><path d="M2 3h4l2 2h6v8H2V3z"/></svg>'
+            : '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"><path d="M3 1h7l3 3v10H3V1z"/></svg>';
+        itemDiv.appendChild(icon);
+
+        // Add name
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = item.name;
+        itemDiv.appendChild(nameSpan);
+
+        div.appendChild(itemDiv);
+
+        if (item.type === 'file') {
+            // Add hover preview for files
+            const filePreview = document.querySelector('.file-preview');
+            
+            itemDiv.addEventListener('mouseenter', (e) => {
+                filePreview.style.display = 'block';
+                filePreview.innerHTML = `<pre><code>${item.content}</code></pre>`;
+                
+                const rect = itemDiv.getBoundingClientRect();
+                filePreview.style.left = `${rect.right + 10}px`;
+                filePreview.style.top = `${rect.top}px`;
+            });
+
+            itemDiv.addEventListener('mouseleave', () => {
+                filePreview.style.display = 'none';
+            });
+        }
+
+        if (item.children) {
+            const childrenDiv = document.createElement('div');
+            childrenDiv.className = 'structure-folder';
+            Object.values(item.children)
+                .sort((a, b) => {
+                    // Folders first, then alphabetical
+                    if (a.type !== b.type) return a.type === 'folder' ? -1 : 1;
+                    return a.name.localeCompare(b.name);
+                })
+                .forEach(child => {
+                    childrenDiv.appendChild(createStructureHTML(child, level + 1));
+                });
+            div.appendChild(childrenDiv);
+        }
+
+        return div;
+    }
+
+    // Remove root folder and add its children directly
+    const rootChildren = structure.children;
+    Object.values(rootChildren)
+        .sort((a, b) => {
+            if (a.type !== b.type) return a.type === 'folder' ? -1 : 1;
+            return a.name.localeCompare(b.name);
+        })
+        .forEach(child => {
+            treeDiv.appendChild(createStructureHTML(child));
+        });
+}
+
+// Initialize structure when DOM is loaded
+document.addEventListener('DOMContentLoaded', initializeStructure);
+
+// Make addFile function globally available
+window.addFile = addFile;
     </script>
 </body>
 </html>
