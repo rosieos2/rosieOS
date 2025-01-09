@@ -59,8 +59,10 @@ body {
     margin: 0;
     padding: 0;
     height: 100vh;
-    overflow: hidden;
     display: flex;
+    background-color: #000000;
+    color: #fff;
+    overflow: hidden;
 }
 
 @keyframes borderFlow {
@@ -82,9 +84,6 @@ body {
     position: fixed;
     left: 0;
     top: 0;
-    border-right: 0.5px solid;
-    border-image: linear-gradient(to bottom, #00ff00, #00ffff, #ff00ff, #00ff00) 1;
-    animation: borderFlow 5s linear infinite;
 }
 
 .logo-container {
@@ -204,12 +203,13 @@ body {
 
 .main-content {
     flex: 1;
-    margin-left: 240px; /* Only match sidebar width */
+    margin-left: 240px; /* Match sidebar width exactly */
+    background-color: #000000;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center; /* Center content horizontally */
-    justify-content: flex-start; /* Align to top */
-    padding: 0 20px; /* Add some padding on sides */
+    width: calc(100% - 240px); /* Adjust width to match sidebar */
 }
 
 .title {
