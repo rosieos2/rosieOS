@@ -19,10 +19,28 @@ export default async function handler(req, res) {
     try {
         const { message, systemPrompt } = req.body;
         
-        // Log the API key presence (not the actual key)
-        console.log('API Key present:', !!process.env.ANTHROPIC_API_KEY);
+        // First request - get the thought process
+        const thoughtResponse = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'anthropic-version': '2023-06-01',
+                'x-api-key': process.env.ANTHROPIC_API_KEY,
+                'anthropic-beta': 'messages-2023-12-15'
+            },
+            body: JSON.stringify({
+                model: 'claude-3-opus-20240229',
+                messages: [{
+                    role: 'user',
+                    content: `Based on this message I received: "${message}", generate 3-5 lines of internal thought process from Jeff's perspective. Format each line starting with ">" and make them feel natural and childlike. Don't include any final response, just the thought process.`
+                }],
+                max_tokens: 150,
+                temperature: 0.7
+            })
+        });
 
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
+        // Second request - get Jeff's actual response
+        const responseMessage = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -37,19 +55,22 @@ export default async function handler(req, res) {
                     content: message
                 }],
                 system: systemPrompt,
-                max_tokens: 1000,
+                max_tokens: 150,
                 temperature: 0.7
             })
         });
 
-        if (!response.ok) {
-            const errorData = await response.text();
-            console.error('Anthropic API error:', errorData);
-            throw new Error(errorData);
+        if (!thoughtResponse.ok || !responseMessage.ok) {
+            throw new Error('API response was not ok');
         }
 
-        const data = await response.json();
-        res.status(200).json(data);
+        const thoughts = await thoughtResponse.json();
+        const response = await responseMessage.json();
+
+        res.status(200).json({
+            thoughts: thoughts.content[0].text,
+            message: response.content[0].text
+        });
     } catch (error) {
         console.error('Server error:', error);
         res.status(500).json({ error: error.message });
