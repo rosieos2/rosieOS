@@ -126,6 +126,7 @@ body {
     font-size: 14px;
     line-height: 1.4;
     max-width: 90%;
+    font-family: 'JetBrains Mono', monospace;
 }
 
 .user-message {
@@ -135,8 +136,14 @@ body {
 }
 
 .assistant-message {
-    background: rgba(0, 255, 255, 0.1);
+    background: transparent;  /* Removed the blue background */
     align-self: flex-start;
+    color: #00ffff;
+    padding-left: 0;  /* Remove left padding for the > symbol */
+}
+
+.assistant-message::before {
+    content: '> ';
     color: #00ffff;
 }
 
@@ -508,7 +515,33 @@ body {
     
     Start by introducing yourself casually like a child would in a chat.`;
     
-        // Add initial greeting with typewriter effect
+        async function showBrainProcess(message) {
+            const terminalContent = document.querySelector('.terminal-window:nth-child(3) .content');
+            terminalContent.innerHTML = ''; // Clear previous content
+            
+            const processes = [
+                `> Receiving message: "${message}"`,
+                "> Processing what this means...",
+                "> Thinking about how this makes me feel...",
+                "> Remembering similar experiences...",
+                "> Deciding what to say...",
+            ];
+    
+            for (const process of processes) {
+                const line = document.createElement('div');
+                line.style.color = '#00ff00';
+                line.style.marginBottom = '8px';
+                terminalContent.appendChild(line);
+                
+                for (let char of process) {
+                    line.textContent += char;
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                }
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+        }
+    
+        // Add initial greeting
         addMessage("hi! im jeff :) im 9 and i love making new friends! do you like video games? i just got a new switch game and its so cool", 'assistant');
     
         async function addMessage(text, sender) {
@@ -519,33 +552,27 @@ body {
             if (sender === 'user') {
                 messageDiv.textContent = text;
             } else {
-                // Add typing class for cursor animation
-                messageDiv.classList.add('typing');
                 for (let i = 0; i < text.length; i++) {
                     await new Promise(resolve => setTimeout(resolve, 20));
                     messageDiv.textContent += text[i];
                     chatMessages.scrollTop = chatMessages.scrollHeight;
                 }
-                // Remove typing class after completion
-                messageDiv.classList.remove('typing');
             }
             
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
     
         async function sendMessage(message) {
-            // Disable input while processing
             chatInput.disabled = true;
-            
             addMessage(message, 'user');
             
-            // Add typing indicator
             const typingDiv = document.createElement('div');
             typingDiv.className = 'chat-message assistant-message typing';
             chatMessages.appendChild(typingDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
             
             try {
+                await showBrainProcess(message);
+                
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {
@@ -562,11 +589,18 @@ body {
                 }
     
                 const data = await response.json();
-                
-                // Remove typing indicator
                 typingDiv.remove();
-                
+    
+                // Fix for [object Object] issue - properly access the response content
                 if (data.content) {
+                    const terminalContent = document.querySelector('.terminal-window:nth-child(3) .content');
+                    const finalThought = document.createElement('div');
+                    finalThought.style.color = '#00ffff';
+                    finalThought.style.marginTop = '16px';
+                    finalThought.textContent = '> Time to reply!';
+                    terminalContent.appendChild(finalThought);
+                    
+                    // Add the message from Claude's response
                     await addMessage(data.content, 'assistant');
                 }
     
@@ -575,7 +609,6 @@ body {
                 typingDiv.remove();
                 await addMessage('sorry my internet is being weird! can you send that again?', 'assistant');
             } finally {
-                // Re-enable input after processing
                 chatInput.disabled = false;
                 chatInput.focus();
             }
@@ -589,92 +622,7 @@ body {
             }
         });
     
-        // Add focus to input on load
         chatInput.focus();
     });
-
-    async function showBrainProcess(message) {
-    const terminalContent = document.querySelector('.terminal-window:nth-child(3) .content');
-    
-    // Clear previous content
-    terminalContent.innerHTML = '';
-    
-    const processes = [
-        `> Receiving message: "${message}"`,
-        "> Analyzing emotional context...",
-        "> Processing personal memories...",
-        "> Generating emotional response...",
-        "> Forming thoughts...",
-    ];
-
-    for (const process of processes) {
-        const line = document.createElement('div');
-        line.style.color = '#00ff00';
-        line.style.marginBottom = '8px';
-        
-        // Type out each character
-        for (let char of process) {
-            line.textContent += char;
-            await new Promise(resolve => setTimeout(resolve, 10));
-        }
-        
-        terminalContent.appendChild(line);
-        await new Promise(resolve => setTimeout(resolve, 300));
-    }
-}
-
-// Update your sendMessage function
-async function sendMessage(message) {
-    chatInput.disabled = true;
-    addMessage(message, 'user');
-    
-    const typingDiv = document.createElement('div');
-    typingDiv.className = 'chat-message assistant-message typing';
-    chatMessages.appendChild(typingDiv);
-    
-    try {
-        // Start brain process visualization
-        showBrainProcess(message);
-        
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                message,
-                systemPrompt: SYSTEM_PROMPT
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-
-        const data = await response.json();
-        typingDiv.remove();
-
-        if (data.content) {
-            // Show final thought process
-            const terminalContent = document.querySelector('.terminal-window:nth-child(3) .content');
-            const finalThought = document.createElement('div');
-            finalThought.style.color = '#00ffff';
-            finalThought.style.marginTop = '16px';
-            finalThought.textContent = '> Sending response...';
-            terminalContent.appendChild(finalThought);
-            
-            // Send actual message
-            await addMessage(data.content, 'assistant');
-        }
-
-    } catch (error) {
-        console.error('Error:', error);
-        typingDiv.remove();
-        await addMessage('sorry my internet is being weird! can you send that again?', 'assistant');
-    } finally {
-        chatInput.disabled = false;
-        chatInput.focus();
-    }
-}
     </script>
 </html>
