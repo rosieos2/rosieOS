@@ -528,19 +528,19 @@ body {
         <div class="brain-stats">
             <div class="stat-line" id="cpu-stat">
                 <span class="stat-icon">⚡</span>
-                CPU: 0.2%
+                <span>CPU: </span><span id="cpu-value">0.2%</span>
             </div>
             <div class="stat-line" id="mem-stat">
                 <span class="stat-icon">💻</span>
-                MEM: 12.4MB
+                <span>MEM: </span><span id="mem-value">12.4MB</span>
             </div>
             <div class="stat-line" id="net-stat">
                 <span class="stat-icon">📡</span>
-                NET: 20ms
+                <span>NET: </span><span id="net-value">20ms</span>
             </div>
             <div class="stat-line" id="proc-stat">
                 <span class="stat-icon">⚙️</span>
-                PROC: idle
+                <span>PROC: </span><span id="proc-value">idle</span>
             </div>
         </div>
         <div class="brain-processes"></div>
@@ -717,17 +717,18 @@ class BrainStats {
     }
 
     updateStats(cpu, mem, net, proc) {
-        this.cpuStat.textContent = `CPU: ${cpu}%`;
-        this.memStat.textContent = `MEM: ${mem}MB`;
-        this.netStat.textContent = `NET: ${net}ms`;
-        this.procStat.textContent = `PROC: ${proc}`;
-        
-        // Update colors based on load
-        this.cpuStat.style.color = cpu > 40 ? '#ff0000' : '#00ff00';
-        this.memStat.style.color = mem > 50 ? '#ffff00' : '#00ff00';
-        this.netStat.style.color = net > 100 ? '#ff0000' : '#00ff00';
-        this.procStat.style.color = proc === 'idle' ? '#00ff00' : '#00ffff';
-    }
+    // Get the value spans (we'll create these in the HTML)
+    document.getElementById('cpu-value').textContent = `${cpu}%`;
+    document.getElementById('mem-value').textContent = `${mem}MB`;
+    document.getElementById('net-value').textContent = `${net}ms`;
+    document.getElementById('proc-value').textContent = proc;
+    
+    // Update colors based on load
+    document.getElementById('cpu-value').style.color = cpu > 40 ? '#ff0000' : '#00ff00';
+    document.getElementById('mem-value').style.color = mem > 50 ? '#ffff00' : '#00ff00';
+    document.getElementById('net-value').style.color = net > 100 ? '#ff0000' : '#00ff00';
+    document.getElementById('proc-value').style.color = proc === 'idle' ? '#00ff00' : '#00ffff';
+}
 }
 
 // Initialize brain stats
