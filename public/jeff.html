@@ -375,6 +375,39 @@ body {
     border-bottom: 1px solid rgba(0, 255, 0, 0.2);
 }
 
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #00ff00;
+    margin-right: 10px;
+    animation: blink 2s infinite;
+}
+
+.brain-processes {
+    margin-top: 40px;
+    padding: 10px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.brain-processes div {
+    position: relative;
+    padding-left: 15px;
+    line-height: 1.6;
+}
+
+.brain-processes div::before {
+    content: '>';
+    position: absolute;
+    left: 0;
+    color: #00ff00;
+}
+
+.process-line {
+    margin-bottom: 4px;
+    font-size: 13px;
+}
+
 @keyframes blink {
     0%, 100% { opacity: 1; }
     50% { opacity: 0; }
@@ -493,9 +526,7 @@ body {
         <div class="terminal-grid">
             <div class="terminal-window">
                 <div class="window-header">
-                    <div class="dots">
-                        <span></span><span></span><span></span>
-                    </div>
+                    <div class="status-dot"></div>
                     <div class="title">Chat Terminal</div>
                 </div>
                 <div class="content chat-content">
@@ -507,21 +538,17 @@ body {
                 </div>
             </div>
 
-<div class="terminal-window">
-    <div class="window-header">
-        <div class="dots">
-            <span></span><span></span><span></span>
-        </div>
-        <div class="title">3D Character Window</div>
-    </div>
+            <div class="terminal-window">
+                <div class="window-header">
+                    <div class="status-dot"></div>
+                    <div class="title">3D Character Window</div>
+                </div>
     <div class="content"></div>
 </div>
 
 <div class="terminal-window">
     <div class="window-header">
-        <div class="dots">
-            <span></span><span></span><span></span>
-        </div>
+        <div class="status-dot"></div>
         <div class="title">Brain Processing</div>
     </div>
     <div class="content">
@@ -572,22 +599,47 @@ body {
     const processesDiv = document.querySelector('.brain-processes');
     processesDiv.innerHTML = '';
     
+    // Add initial system lines
+    await addProcessLine('Initializing thought process...', processesDiv);
+    await addProcessLine('Analyzing input...', processesDiv);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
     const lines = thoughts.split('\n');
     
     for (const line of lines) {
         if (line.trim()) {
             const thoughtLine = document.createElement('div');
+            thoughtLine.className = 'process-line';
             thoughtLine.style.color = '#00ff00';
-            thoughtLine.style.marginBottom = '8px';
             processesDiv.appendChild(thoughtLine);
             
-            for (let char of line) {
+            // Add "THOUGHT:" prefix to make it more system-like
+            let processedLine = `THOUGHT: ${line.trim()}`;
+            
+            for (let char of processedLine) {
                 thoughtLine.textContent += char;
                 await new Promise(resolve => setTimeout(resolve, 15));
             }
             await new Promise(resolve => setTimeout(resolve, 200));
         }
     }
+    
+    // Add concluding system lines
+    await addProcessLine('Processing complete', processesDiv);
+    await addProcessLine('Generating response...', processesDiv);
+}
+
+async function addProcessLine(text, container) {
+    const line = document.createElement('div');
+    line.className = 'process-line';
+    line.style.color = '#666666';
+    container.appendChild(line);
+    
+    for (let char of text) {
+        line.textContent += char;
+        await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    await new Promise(resolve => setTimeout(resolve, 100));
 }
     
         // Add initial greeting
