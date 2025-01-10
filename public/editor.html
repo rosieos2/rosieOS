@@ -165,36 +165,6 @@ body {
     color: #00ffff;
 }
 
-.structure-tree {
-    padding: 10px;
-    font-family: 'JetBrains Mono', monospace;
-    color: #00ff00;
-}
-
-.structure-item {
-    padding: 4px 0;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.structure-item:hover {
-    background: rgba(0, 255, 0, 0.1);
-}
-
-.structure-folder {
-    margin-left: 20px;
-}
-
-.structure-icon {
-    width: 16px;
-    height: 16px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
 .file-preview {
     position: fixed;
     background: #1a1a1a;
@@ -335,7 +305,7 @@ body {
 
 .terminal-grid {
     display: grid;
-    grid-template-columns: 25% 35% 35%;
+    grid-template-columns: 30% 40% 30%;  /* Updated */
     gap: 24px;
     padding: 20px;
     margin-top: 40px;
@@ -467,13 +437,6 @@ body {
 .terminal-window.model-viewer {
     grid-column: 3;
     grid-row: 1 / span 2;
-    height: 100%;
-}
-
-.terminal-window.structure {
-    grid-column: 2;
-    grid-row: 2;
-    margin: 0;
     height: 100%;
 }
 
@@ -691,18 +654,6 @@ body {
                     <!-- Preview content -->
                 </div>
             </div>
-         
-            <div class="terminal-window structure">
-                <div class="window-header">
-                    <div class="dots">
-                        <span></span><span></span><span></span>
-                    </div>
-                    <div class="title">Site Structure</div>
-                </div>
-                <div class="content">
-                    <!-- Structure tree -->
-                </div>
-            </div>
          </div>
     </main>
     <script>
@@ -776,16 +727,9 @@ function updatePreview(code, language) {
             iframe.style.width = '100%';
             iframe.style.height = '100%';
             iframe.style.border = 'none';
-            previewWindow.innerHTML = ''; // Clear previous content
+            previewWindow.innerHTML = ''; 
             previewWindow.appendChild(iframe);
         }
-
-        // Combine all existing HTML content
-        const htmlFile = projectFiles.files.find(f => f.path === 'index.html');
-        const cssFile = projectFiles.files.find(f => f.path === 'styles/main.css');
-        
-        let htmlContent = htmlFile ? htmlFile.content : '';
-        const cssContent = cssFile ? cssFile.content : '';
 
         // Create a contained document
         iframe.contentDocument.open();
@@ -796,12 +740,10 @@ function updatePreview(code, language) {
                 <style>
                     /* Reset styles to prevent leaking */
                     html, body { margin: 0; padding: 0; }
-                    /* Add CSS content */
-                    ${cssContent}
                 </style>
             </head>
             <body>
-                ${htmlContent}
+                ${code}
             </body>
             </html>
         `);
@@ -821,7 +763,6 @@ function appendMessage(message, sender) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${sender}-message`;
     
-    // Only show the message text, no code blocks
     if (message.includes('```')) {
         const parts = message.split(/(```[\s\S]*?```)/g);
         parts.forEach(part => {
@@ -830,29 +771,12 @@ function appendMessage(message, sender) {
                 if (match) {
                     const language = match[1] || '';
                     const code = match[2].trim();
-                    let filePath;
-                    
-                    switch(language.toLowerCase()) {
-                        case 'html': filePath = 'index.html'; break;
-                        case 'javascript': case 'js': 
-                            filePath = code.includes('export default') ? 'api/chat.js' : 'scripts/app.js';
-                            break;
-                        case 'css': filePath = 'styles/main.css'; break;
-                    }
-
-                    if (filePath) {
-                        window.addFile(filePath, code);
-                        updatePreview(code, language);
-                    }
+                    updatePreview(code, language);
                 }
             } else if (part.trim()) {
                 const textDiv = document.createElement('div');
                 textDiv.className = 'text-content';
-                if (sender === 'agent') {
-                    textDiv.textContent = part;
-                } else {
-                    textDiv.textContent = part;
-                }
+                textDiv.textContent = part;
                 messageDiv.appendChild(textDiv);
             }
         });
@@ -873,11 +797,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     appendMessage('Ready to help! Just tell me what you want to build.', 'agent');
 });
-
-const projectFiles = {
-    files: [],
-    folders: new Set()
-};
 
 function initializeStructure() {
     const structureWindow = document.querySelector('.terminal-window.structure .content');
@@ -1055,12 +974,6 @@ function updateStructureDisplay() {
             treeDiv.appendChild(createStructureHTML(child));
         });
 }
-
-// Initialize structure when DOM is loaded
-document.addEventListener('DOMContentLoaded', initializeStructure);
-
-// Make addFile function globally available
-window.addFile = addFile;
     </script>
 </body>
 </html>
