@@ -789,11 +789,13 @@ function appendMessage(message, sender) {
 
 // Initialize chat functionality
 document.addEventListener('DOMContentLoaded', () => {
-    initializeStructure();
     const input = document.querySelector('.input-line input');
     input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendMessage();
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
     });
+    
     appendMessage('Ready to help! Just tell me what you want to build.', 'agent');
 });
 
