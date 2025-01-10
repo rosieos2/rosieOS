@@ -182,6 +182,21 @@ body {
     z-index: 20;
 }
 
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #00ff00;
+    margin-right: 10px;
+    animation: blink 2s infinite;
+}
+
+/* Add this animation */
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
 .banner-scroll {
     padding: 8px 0;
     display: flex;
@@ -242,22 +257,6 @@ body {
     align-items: center;
     border-bottom: 1px solid rgba(0, 255, 0, 0.2);
 }
-
-.dots {
-    display: flex;
-    gap: 6px;
-    margin-right: 15px;
-}
-
-.dots span {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-}
-
-.dots span:nth-child(1) { background: #ff5f56; }
-.dots span:nth-child(2) { background: #ffbd2e; }
-.dots span:nth-child(3) { background: #27c93f; }
 
 .title {
     color: #00ff00;
@@ -349,9 +348,7 @@ body {
         <div class="terminal-grid">
             <div class="terminal-window">
                 <div class="window-header">
-                    <div class="dots">
-                        <span></span><span></span><span></span>
-                    </div>
+                    <div class="status-dot"></div>
                     <div class="title">Terminal 1</div>
                 </div>
                 <div class="content"></div>
@@ -359,9 +356,7 @@ body {
             
             <div class="terminal-window">
                 <div class="window-header">
-                    <div class="dots">
-                        <span></span><span></span><span></span>
-                    </div>
+                    <div class="status-dot"></div>
                     <div class="title">Terminal 2</div>
                 </div>
                 <div class="content"></div>
@@ -369,9 +364,7 @@ body {
             
             <div class="terminal-window">
                 <div class="window-header">
-                    <div class="dots">
-                        <span></span><span></span><span></span>
-                    </div>
+                    <div class="status-dot"></div>
                     <div class="title">Terminal 3</div>
                 </div>
                 <div class="content"></div>
