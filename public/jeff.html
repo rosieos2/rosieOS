@@ -305,6 +305,28 @@ body {
     height: calc(100vh - 80px);
 }
 
+.brain-stats {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #00ff00;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 255, 0, 0.2);
+}
+
+.stat-line {
+    margin-bottom: 4px;
+    white-space: nowrap;
+}
+
+.brain-processes {
+    margin-top: 40px;
+}
+
 /* Terminal Window Styles */
 .terminal-window {
     background: #000000;
@@ -490,9 +512,16 @@ body {
         </div>
         <div class="title">Brain Processing</div>
     </div>
-    <div class="content"></div>
-</div>
+    <div class="content">
+        <div class="brain-stats">
+            <div class="stat-line" id="cpu-stat">CPU: 0.2%</div>
+            <div class="stat-line" id="mem-stat">MEM: 12.4MB</div>
+            <div class="stat-line" id="net-stat">NET: 20ms</div>
+            <div class="stat-line" id="proc-stat">PROC: idle</div>
         </div>
+        <div class="brain-processes"></div>
+    </div>
+</div>
     </main>
 </body>
 <script>
@@ -516,8 +545,8 @@ body {
     Start by introducing yourself casually like a child would in a chat.`;
     
     async function showBrainProcess(thoughts) {
-    const terminalContent = document.querySelector('.terminal-window:nth-child(3) .content');
-    terminalContent.innerHTML = '';
+    const processesDiv = document.querySelector('.brain-processes');
+    processesDiv.innerHTML = '';
     
     const lines = thoughts.split('\n');
     
@@ -526,7 +555,7 @@ body {
             const thoughtLine = document.createElement('div');
             thoughtLine.style.color = '#00ff00';
             thoughtLine.style.marginBottom = '8px';
-            terminalContent.appendChild(thoughtLine);
+            processesDiv.appendChild(thoughtLine);
             
             for (let char of line) {
                 thoughtLine.textContent += char;
@@ -611,5 +640,106 @@ body {
     
         chatInput.focus();
     });
+
+    // Add these functions to your existing JavaScript
+class BrainStats {
+    constructor() {
+        this.cpuStat = document.getElementById('cpu-stat');
+        this.memStat = document.getElementById('mem-stat');
+        this.netStat = document.getElementById('net-stat');
+        this.procStat = document.getElementById('proc-stat');
+        this.isProcessing = false;
+        this.updateInterval = null;
+        
+        // Start idle updates
+        this.startIdleUpdates();
+    }
+
+    startIdleUpdates() {
+        this.updateInterval = setInterval(() => {
+            if (!this.isProcessing) {
+                this.updateStats(
+                    this.randomRange(0.1, 0.5),  // CPU idle range
+                    this.randomRange(10, 15),    // MEM idle range
+                    this.randomRange(15, 25),    // NET idle range
+                    'idle'
+                );
+            }
+        }, 1000);
+    }
+
+    startProcessing() {
+        this.isProcessing = true;
+        clearInterval(this.updateInterval);
+        
+        this.updateInterval = setInterval(() => {
+            this.updateStats(
+                this.randomRange(45, 95),    // CPU processing range
+                this.randomRange(80, 150),   // MEM processing range
+                this.randomRange(50, 150),   // NET processing range
+                'ACTIVE'
+            );
+        }, 200);
+    }
+
+    stopProcessing() {
+        this.isProcessing = false;
+        clearInterval(this.updateInterval);
+        this.startIdleUpdates();
+    }
+
+    randomRange(min, max) {
+        return (Math.random() * (max - min) + min).toFixed(1);
+    }
+
+    updateStats(cpu, mem, net, proc) {
+        this.cpuStat.textContent = `CPU: ${cpu}%`;
+        this.memStat.textContent = `MEM: ${mem}MB`;
+        this.netStat.textContent = `NET: ${net}ms`;
+        this.procStat.textContent = `PROC: ${proc}`;
+        
+        // Update colors based on load
+        this.cpuStat.style.color = cpu > 40 ? '#ff0000' : '#00ff00';
+        this.memStat.style.color = mem > 50 ? '#ffff00' : '#00ff00';
+        this.netStat.style.color = net > 100 ? '#ff0000' : '#00ff00';
+        this.procStat.style.color = proc === 'idle' ? '#00ff00' : '#00ffff';
+    }
+}
+
+// Initialize brain stats
+const brainStats = new BrainStats();
+
+// Update your sendMessage function to include stats changes
+async function sendMessage(message) {
+    chatInput.disabled = true;
+    addMessage(message, 'user');
+    
+    brainStats.startProcessing(); // Start processing stats
+    
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'chat-message assistant-message typing';
+    chatMessages.appendChild(typingDiv);
+    
+    try {
+        // ... your existing fetch code ...
+
+        if (data.thoughts) {
+            await showBrainProcess(data.thoughts);
+        }
+        
+        if (data.message) {
+            await addMessage(data.message, 'assistant');
+        }
+
+    } catch (error) {
+        console.error('Error:', error);
+        typingDiv.remove();
+        await addMessage('sorry my internet is being weird! can you send that again?', 'assistant');
+    } finally {
+        chatInput.disabled = false;
+        chatInput.focus();
+        brainStats.stopProcessing(); // Stop processing stats
+    }
+}
     </script>
 </html>
