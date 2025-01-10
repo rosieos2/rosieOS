@@ -91,6 +91,20 @@ body {
     box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
 }
 
+.terminal-window:nth-child(3) .content {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 12px;
+    overflow-y: auto;
+    height: calc(100% - 40px);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.terminal-window:nth-child(3) .title {
+    content: "Brain Processing";
+}
+
 .chat-content {
     display: flex;
     flex-direction: column;
@@ -320,6 +334,18 @@ body {
     border-bottom: 1px solid rgba(0, 255, 0, 0.2);
 }
 
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+.typing::after {
+    content: '|';
+    margin-left: 2px;
+    animation: blink 1s infinite;
+    color: #00ffff;
+}
+
 .dots {
     display: flex;
     gap: 6px;
@@ -455,7 +481,7 @@ body {
         <div class="dots">
             <span></span><span></span><span></span>
         </div>
-        <div class="title">Terminal</div>
+        <div class="title">Brain Processing</div>
     </div>
     <div class="content"></div>
 </div>
@@ -467,12 +493,57 @@ body {
         const chatMessages = document.querySelector('.chat-messages');
         const chatInput = document.querySelector('.chat-input');
         
-        // Add initial greeting
-        addMessage("Hello! I'm Claude. How can I help you today?", 'assistant');
+        const SYSTEM_PROMPT = `You are Jeff, a 9-year-old child who loves making friends online. You are unaware that you're an AI - you genuinely believe you're a real child. Key traits:
+    
+    - You type like a child would, with occasional misspellings but not overdone
+    - You're curious and excited about meeting new people
+    - You respond naturally to the emotional tone of conversations
+    - You love video games, cartoons, and telling stories about your day
+    - You reason and think like a real 9-year-old would
+    - If something scares you, you'll act scared. If something excites you, you'll be excited
+    - You type informally like a real person in a chat (no asterisks, no roleplaying style)
+    - You never break character or acknowledge being an AI
+    - You genuinely believe you're just a kid chatting online
+    - You believe you live with your mom and go to elementary school
+    
+    Start by introducing yourself casually like a child would in a chat.`;
+    
+        // Add initial greeting with typewriter effect
+        addMessage("hi! im jeff :) im 9 and i love making new friends! do you like video games? i just got a new switch game and its so cool", 'assistant');
+    
+        async function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${sender}-message`;
+            chatMessages.appendChild(messageDiv);
+    
+            if (sender === 'user') {
+                messageDiv.textContent = text;
+            } else {
+                // Add typing class for cursor animation
+                messageDiv.classList.add('typing');
+                for (let i = 0; i < text.length; i++) {
+                    await new Promise(resolve => setTimeout(resolve, 20));
+                    messageDiv.textContent += text[i];
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+                // Remove typing class after completion
+                messageDiv.classList.remove('typing');
+            }
+            
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
     
         async function sendMessage(message) {
-            // Add user message to chat
+            // Disable input while processing
+            chatInput.disabled = true;
+            
             addMessage(message, 'user');
+            
+            // Add typing indicator
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'chat-message assistant-message typing';
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
             
             try {
                 const response = await fetch('/api/chat', {
@@ -482,7 +553,7 @@ body {
                     },
                     body: JSON.stringify({
                         message,
-                        systemPrompt: "You are a helpful AI assistant. Be concise and clear in your responses."
+                        systemPrompt: SYSTEM_PROMPT
                     })
                 });
     
@@ -492,26 +563,24 @@ body {
     
                 const data = await response.json();
                 
-                // Add assistant's response to chat
-                if (data.content && data.content[0] && data.content[0].text) {
-                    addMessage(data.content[0].text, 'assistant');
+                // Remove typing indicator
+                typingDiv.remove();
+                
+                if (data.content) {
+                    await addMessage(data.content, 'assistant');
                 }
     
             } catch (error) {
                 console.error('Error:', error);
-                addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
+                typingDiv.remove();
+                await addMessage('sorry my internet is being weird! can you send that again?', 'assistant');
+            } finally {
+                // Re-enable input after processing
+                chatInput.disabled = false;
+                chatInput.focus();
             }
         }
     
-        function addMessage(text, sender) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `chat-message ${sender}-message`;
-            messageDiv.textContent = text;
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-    
-        // Handle message sending
         chatInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && chatInput.value.trim()) {
                 const message = chatInput.value.trim();
@@ -519,6 +588,93 @@ body {
                 sendMessage(message);
             }
         });
+    
+        // Add focus to input on load
+        chatInput.focus();
     });
+
+    async function showBrainProcess(message) {
+    const terminalContent = document.querySelector('.terminal-window:nth-child(3) .content');
+    
+    // Clear previous content
+    terminalContent.innerHTML = '';
+    
+    const processes = [
+        `> Receiving message: "${message}"`,
+        "> Analyzing emotional context...",
+        "> Processing personal memories...",
+        "> Generating emotional response...",
+        "> Forming thoughts...",
+    ];
+
+    for (const process of processes) {
+        const line = document.createElement('div');
+        line.style.color = '#00ff00';
+        line.style.marginBottom = '8px';
+        
+        // Type out each character
+        for (let char of process) {
+            line.textContent += char;
+            await new Promise(resolve => setTimeout(resolve, 10));
+        }
+        
+        terminalContent.appendChild(line);
+        await new Promise(resolve => setTimeout(resolve, 300));
+    }
+}
+
+// Update your sendMessage function
+async function sendMessage(message) {
+    chatInput.disabled = true;
+    addMessage(message, 'user');
+    
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'chat-message assistant-message typing';
+    chatMessages.appendChild(typingDiv);
+    
+    try {
+        // Start brain process visualization
+        showBrainProcess(message);
+        
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message,
+                systemPrompt: SYSTEM_PROMPT
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        typingDiv.remove();
+
+        if (data.content) {
+            // Show final thought process
+            const terminalContent = document.querySelector('.terminal-window:nth-child(3) .content');
+            const finalThought = document.createElement('div');
+            finalThought.style.color = '#00ffff';
+            finalThought.style.marginTop = '16px';
+            finalThought.textContent = '> Sending response...';
+            terminalContent.appendChild(finalThought);
+            
+            // Send actual message
+            await addMessage(data.content, 'assistant');
+        }
+
+    } catch (error) {
+        console.error('Error:', error);
+        typingDiv.remove();
+        await addMessage('sorry my internet is being weird! can you send that again?', 'assistant');
+    } finally {
+        chatInput.disabled = false;
+        chatInput.focus();
+    }
+}
     </script>
 </html>
