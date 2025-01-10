@@ -515,31 +515,27 @@ body {
     
     Start by introducing yourself casually like a child would in a chat.`;
     
-        async function showBrainProcess(message) {
-            const terminalContent = document.querySelector('.terminal-window:nth-child(3) .content');
-            terminalContent.innerHTML = ''; // Clear previous content
-            
-            const processes = [
-                `> Receiving message: "${message}"`,
-                "> Processing what this means...",
-                "> Thinking about how this makes me feel...",
-                "> Remembering similar experiences...",
-                "> Deciding what to say...",
-            ];
+    async function showBrainProcess(thoughts) {
+    const terminalContent = document.querySelector('.terminal-window:nth-child(3) .content');
+    terminalContent.innerHTML = '';
     
-            for (const process of processes) {
-                const line = document.createElement('div');
-                line.style.color = '#00ff00';
-                line.style.marginBottom = '8px';
-                terminalContent.appendChild(line);
-                
-                for (let char of process) {
-                    line.textContent += char;
-                    await new Promise(resolve => setTimeout(resolve, 10));
-                }
-                await new Promise(resolve => setTimeout(resolve, 300));
+    const lines = thoughts.split('\n');
+    
+    for (const line of lines) {
+        if (line.trim()) {
+            const thoughtLine = document.createElement('div');
+            thoughtLine.style.color = '#00ff00';
+            thoughtLine.style.marginBottom = '8px';
+            terminalContent.appendChild(thoughtLine);
+            
+            for (let char of line) {
+                thoughtLine.textContent += char;
+                await new Promise(resolve => setTimeout(resolve, 15));
             }
+            await new Promise(resolve => setTimeout(resolve, 200));
         }
+    }
+}
     
         // Add initial greeting
         addMessage("hi! im jeff :) im 9 and i love making new friends! do you like video games? i just got a new switch game and its so cool", 'assistant');
@@ -563,56 +559,47 @@ body {
         }
     
         async function sendMessage(message) {
-            chatInput.disabled = true;
-            addMessage(message, 'user');
-            
-            const typingDiv = document.createElement('div');
-            typingDiv.className = 'chat-message assistant-message typing';
-            chatMessages.appendChild(typingDiv);
-            
-            try {
-                await showBrainProcess(message);
-                
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        message,
-                        systemPrompt: SYSTEM_PROMPT
-                    })
-                });
+    chatInput.disabled = true;
+    addMessage(message, 'user');
     
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'chat-message assistant-message typing';
+    chatMessages.appendChild(typingDiv);
     
-                const data = await response.json();
-                typingDiv.remove();
-    
-                // Fix for [object Object] issue - properly access the response content
-                if (data.content) {
-                    const terminalContent = document.querySelector('.terminal-window:nth-child(3) .content');
-                    const finalThought = document.createElement('div');
-                    finalThought.style.color = '#00ffff';
-                    finalThought.style.marginTop = '16px';
-                    finalThought.textContent = '> Time to reply!';
-                    terminalContent.appendChild(finalThought);
-                    
-                    // Add the message from Claude's response
-                    await addMessage(data.content, 'assistant');
-                }
-    
-            } catch (error) {
-                console.error('Error:', error);
-                typingDiv.remove();
-                await addMessage('sorry my internet is being weird! can you send that again?', 'assistant');
-            } finally {
-                chatInput.disabled = false;
-                chatInput.focus();
-            }
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message,
+                systemPrompt: SYSTEM_PROMPT
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
         }
+
+        const data = await response.json();
+        typingDiv.remove();
+
+        // Show the thought process
+        await showBrainProcess(data.thoughts);
+        
+        // Show Jeff's response
+        await addMessage(data.message, 'assistant');
+
+    } catch (error) {
+        console.error('Error:', error);
+        typingDiv.remove();
+        await addMessage('sorry my internet is being weird! can you send that again?', 'assistant');
+    } finally {
+        chatInput.disabled = false;
+        chatInput.focus();
+    }
+}
     
         chatInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && chatInput.value.trim()) {
