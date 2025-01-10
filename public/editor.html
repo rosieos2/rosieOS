@@ -305,10 +305,10 @@ body {
 
 .terminal-grid {
     display: grid;
-    grid-template-columns: 30% 40% 30%;  /* Updated */
+    grid-template-columns: 1fr 1fr;  /* Two equal columns */
+    grid-template-rows: auto auto;    /* Two rows */
     gap: 24px;
     padding: 20px;
-    margin-top: 40px;
     height: calc(100vh - 80px);
     margin: 0 auto;
     width: 100%;
@@ -430,21 +430,20 @@ body {
 }
 .terminal-window.ai-chat {
     grid-column: 1;
-    grid-row: 1 / span 2;
-    height: 100%;
+    grid-row: 1;
+    height: 400px;  /* Fixed height for top terminals */
 }
 
 .terminal-window.model-viewer {
-    grid-column: 3;
-    grid-row: 1 / span 2;
-    height: 100%;
+    grid-column: 2;
+    grid-row: 1;
+    height: 400px;  /* Fixed height for top terminals */
 }
 
 .terminal-window.preview {
-    grid-column: 2;
-    grid-row: 1;
-    margin: 0;
-    height: 100%;
+    grid-column: 1 / span 2;  /* Spans both columns */
+    grid-row: 2;
+    height: 300px;  /* Height for bottom terminal */
 }
 
 .terminal-text {
