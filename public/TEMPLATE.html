@@ -336,6 +336,46 @@ body {
     box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
 }
 
+.action-buttons {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 0 20px;
+}
+
+.action-btn {
+    background: transparent;
+    border: 1px solid #00ff00;
+    color: #00ff00;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    background: rgba(0, 255, 0, 0.1);
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+}
+
+/* Code Editor Modal Styles */
+.code-editor-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+}
+
 .preview-content {
     width: 100%;
     height: calc(100% - 32px); /* Subtract header height */
@@ -375,6 +415,72 @@ body {
     display: flex;
     align-items: center;
     gap: 5px;
+}
+
+.code-editor-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    height: 80%;
+    background: #000000;
+    border: 1px solid #00ff00;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.editor-header {
+    padding: 12px 20px;
+    border-bottom: 1px solid #00ff00;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 255, 0, 0.1);
+}
+
+.editor-title {
+    color: #00ff00;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+}
+
+.close-btn {
+    background: transparent;
+    border: none;
+    color: #00ff00;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0 8px;
+}
+
+.close-btn:hover {
+    color: #ff0000;
+}
+
+.code-textarea {
+    flex: 1;
+    background: #0a0a0a;
+    border: none;
+    color: #00ff00;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    padding: 20px;
+    resize: none;
+    outline: none;
+    width: 100%;
+    tab-size: 4;
+}
+
+.editor-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #00ff00;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background: rgba(0, 255, 0, 0.1);
 }
 
 .stat-icon {
@@ -512,10 +618,6 @@ body {
             </div>
             
             <div class="terminal-window">
-                <div class="window-header">
-                    <div class="status-dot"></div>
-                    <div class="title">SYSTEM STATS</div>
-                </div>
                 <div class="content">
                     <div class="brain-stats">
                         <div class="stat-line" id="cpu-stat">
@@ -535,9 +637,26 @@ body {
                             <span>PROC: </span><span id="proc-value">idle</span>
                         </div>
                     </div>
+                    <div class="action-buttons">
+                        <button class="action-btn" onclick="handleEditCode()">Edit Code</button>
+                    </div>
                 </div>
-            </div>  <!-- Added closing tag -->
+            </div>
+        </div>
     </main>
+    <div class="code-editor-modal" id="codeEditorModal">
+        <div class="code-editor-content">
+            <div class="editor-header">
+                <div class="editor-title">Code Editor</div>
+                <button class="close-btn" onclick="closeEditor()">×</button>
+            </div>
+            <textarea id="codeTextArea" class="code-textarea" spellcheck="false"></textarea>
+            <div class="editor-footer">
+                <button class="action-btn" onclick="saveAndRunCode()">Save & Run</button>
+                <button class="action-btn" onclick="closeEditor()">Cancel</button>
+            </div>
+        </div>
+    </div>
 </body>
 <script>
 
@@ -603,6 +722,48 @@ class BrainStats {
         document.getElementById('proc-value').style.color = proc === 'idle' ? '#00ff00' : '#00ffff';
     }
 }
+
+let currentGameCode = '';
+
+function handleEditCode() {
+    const modal = document.getElementById('codeEditorModal');
+    const textarea = document.getElementById('codeTextArea');
+    
+    // Get current game code if it exists
+    if (window.currentGame) {
+        textarea.value = currentGameCode;
+    }
+    
+    modal.style.display = 'block';
+    textarea.focus();
+}
+
+function closeEditor() {
+    const modal = document.getElementById('codeEditorModal');
+    modal.style.display = 'none';
+}
+
+function saveAndRunCode() {
+    const textarea = document.getElementById('codeTextArea');
+    const code = textarea.value;
+    
+    // Store the code
+    currentGameCode = code;
+    
+    // Initialize the game with new code
+    initializeGamePreview(code);
+    
+    // Close the modal
+    closeEditor();
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('codeEditorModal');
+    if (e.target === modal) {
+        closeEditor();
+    }
+});
 
 // Initialize brain stats
 const brainStats = new BrainStats();
@@ -691,6 +852,7 @@ Remember to keep explanations clear and focused on game development implementati
 }
 
 function initializeGamePreview(code) {
+    currentGameCode = code;
     const gameContainer = document.getElementById('gameContainer');
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -832,14 +994,20 @@ async function sendMessage(message) {
         const data = await response.json();
         typingDiv.remove();
 
-        // Extract game code if present and handle it
+        // First display thoughts if they exist
+        if (data.thoughts) {
+            await addMessage(data.thoughts, 'assistant');
+        }
+
+        // Then handle game code if present in the message
         const gameCodeMatch = data.message.match(/~~~gameCode~~~([\s\S]*?)~~~/);
         if (gameCodeMatch) {
             const gameCode = gameCodeMatch[1].trim();
+            currentGameCode = gameCode; // Store the code when received from AI
             const cleanMessage = data.message.replace(/~~~gameCode~~~[\s\S]*?~~~/, '').trim();
             await addMessage(cleanMessage, 'assistant');
             
-            // Small delay to ensure message is displayed before game initialization
+            // Initialize game with a small delay
             setTimeout(() => {
                 initializeGamePreview(gameCode);
             }, 100);
