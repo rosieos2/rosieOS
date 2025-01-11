@@ -729,13 +729,18 @@ function handleEditCode() {
     const modal = document.getElementById('codeEditorModal');
     const textarea = document.getElementById('codeTextArea');
     
-    // Get current game code if it exists
-    if (window.currentGame) {
+    // Check if we have current game code stored
+    if (currentGameCode) {
         textarea.value = currentGameCode;
+    } else {
+        textarea.value = '// No game code available';
     }
     
     modal.style.display = 'block';
     textarea.focus();
+    
+    // Log for debugging
+    console.log('Current game code:', currentGameCode);
 }
 
 function closeEditor() {
