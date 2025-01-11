@@ -691,9 +691,18 @@ function initializeGamePreview(code) {
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     
-    // Clean up existing game state
-    if (window.currentGame && window.currentGame.cleanup) {
-        window.currentGame.cleanup();
+    // Clean up existing game state and event listeners
+    if (window.currentGame) {
+        if (window.currentGame.cleanup) {
+            window.currentGame.cleanup();
+        }
+        // Remove any existing event listeners
+        if (window.currentGame.keydownHandler) {
+            document.removeEventListener('keydown', window.currentGame.keydownHandler);
+        }
+        if (window.currentGame.keyupHandler) {
+            document.removeEventListener('keyup', window.currentGame.keyupHandler);
+        }
     }
     
     // Set canvas size to match container
@@ -705,18 +714,81 @@ function initializeGamePreview(code) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     try {
-        // Create game context
+        // Create game context with input state
         const gameContext = {
             canvas: canvas,
             ctx: ctx,
             width: canvas.width,
             height: canvas.height,
-            container: gameContainer
+            container: gameContainer,
+            keys: {}, // Add an object to track pressed keys
+            input: {  // Add common input states
+                left: false,
+                right: false,
+                up: false,
+                down: false,
+                space: false
+            }
         };
 
-        // Wrap the code in parentheses to make it an expression
+        // Set up keyboard event listeners
+        const keydownHandler = (e) => {
+            gameContext.keys[e.key] = true;
+            switch(e.key) {
+                case 'ArrowLeft':
+                    gameContext.input.left = true;
+                    break;
+                case 'ArrowRight':
+                    gameContext.input.right = true;
+                    break;
+                case 'ArrowUp':
+                    gameContext.input.up = true;
+                    break;
+                case 'ArrowDown':
+                    gameContext.input.down = true;
+                    break;
+                case ' ':
+                    gameContext.input.space = true;
+                    break;
+            }
+            // Prevent scrolling with arrow keys
+            if(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].indexOf(e.code) > -1) {
+                e.preventDefault();
+            }
+        };
+
+        const keyupHandler = (e) => {
+            gameContext.keys[e.key] = false;
+            switch(e.key) {
+                case 'ArrowLeft':
+                    gameContext.input.left = false;
+                    break;
+                case 'ArrowRight':
+                    gameContext.input.right = false;
+                    break;
+                case 'ArrowUp':
+                    gameContext.input.up = false;
+                    break;
+                case 'ArrowDown':
+                    gameContext.input.down = false;
+                    break;
+                case ' ':
+                    gameContext.input.space = false;
+                    break;
+            }
+        };
+
+        // Add event listeners
+        document.addEventListener('keydown', keydownHandler);
+        document.addEventListener('keyup', keyupHandler);
+
+        // Create and execute game function
         const gameFunction = new Function('game', `return (${code})`);
         window.currentGame = gameFunction()(gameContext);
+        
+        // Store handlers for cleanup
+        window.currentGame.keydownHandler = keydownHandler;
+        window.currentGame.keyupHandler = keyupHandler;
         
     } catch (error) {
         console.error('Game execution error:', error);
