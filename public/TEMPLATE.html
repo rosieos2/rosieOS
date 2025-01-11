@@ -341,13 +341,6 @@ body {
     height: 100%;
     position: relative;
     overflow: hidden;
-    background: rgba(0, 255, 0, 0.05);
-}
-
-#gameCanvas {
-    display: block;
-    margin: 0 auto;
-    background: #000;
 }
 
 #gameContainer {
@@ -356,6 +349,11 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+#gameCanvas {
+    display: block;
+    background: #000;
 }
 
 .brain-stats {
@@ -483,16 +481,17 @@ body {
 
     <main class="main-content">
         <div class="terminal-grid">
-        <div class="terminal-window">
-            <div class="window-header">
-                <div class="status-dot"></div>
-                <div class="title">LIVE PREVIEW</div>
+            <div class="terminal-window">
+                <div class="window-header">
+                    <div class="status-dot"></div>
+                    <div class="title">LIVE PREVIEW</div>
+                </div>
+                <div class="preview-content">
+                    <div id="gameContainer">
+                        <canvas id="gameCanvas"></canvas>
+                    </div>
+                </div>
             </div>
-            <div class="content preview-content">
-                <canvas id="gameCanvas"></canvas>
-                <div id="gameContainer"></div>
-            </div>
-        </div>
             
             <div class="terminal-window">
                 <div class="window-header">
@@ -603,9 +602,25 @@ class BrainStats {
 
 // Initialize brain stats
 const brainStats = new BrainStats();
-    document.addEventListener('DOMContentLoaded', () => {
-        const chatMessages = document.querySelector('.chat-messages');
-        const chatInput = document.querySelector('.chat-input');
+document.addEventListener('DOMContentLoaded', () => {
+    const chatMessages = document.querySelector('.chat-messages');
+    const chatInput = document.querySelector('.chat-input');
+    const gameContainer = document.getElementById('gameContainer');
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Add this resize function
+    function resizeCanvas() {
+        canvas.width = gameContainer.clientWidth * 0.95;
+        canvas.height = gameContainer.clientHeight * 0.95;
+        if (window.currentGame && window.currentGame.redraw) {
+            window.currentGame.redraw();
+        }
+    }
+
+    // Set up resize handling
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
         
         const SYSTEM_PROMPT = `You are ARCADE-X, an AI specialized in browser game development. When users ask for a game, provide the complete JavaScript code that can run directly in the preview window.
 
@@ -676,30 +691,33 @@ function initializeGamePreview(code) {
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     
-    // Reset the game container
-    gameContainer.innerHTML = '';
+    // Clean up existing game state
+    if (window.currentGame && window.currentGame.cleanup) {
+        window.currentGame.cleanup();
+    }
     
-    // Set canvas size
-    canvas.width = gameContainer.clientWidth * 0.9;  // 90% of container width
-    canvas.height = gameContainer.clientHeight * 0.9;
-
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
     try {
-        // Create a safe execution context with game-specific utilities
+        // Create game context
         const gameContext = {
             canvas: canvas,
             ctx: ctx,
-            container: gameContainer,
             width: canvas.width,
-            height: canvas.height
+            height: canvas.height,
+            container: gameContainer
         };
 
-        // Execute the game code with the game context
+        // Create and execute game function with proper error handling
         const gameFunction = new Function('game', code);
-        gameFunction(gameContext);
+        window.currentGame = gameFunction(gameContext);
         
     } catch (error) {
         console.error('Game execution error:', error);
-        gameContainer.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+        ctx.fillStyle = 'red';
+        ctx.font = '16px monospace';
+        ctx.fillText(`Error: ${error.message}`, 10, 30);
     }
 }
         
@@ -711,6 +729,7 @@ async function sendMessage(message) {
     
     const typingDiv = document.createElement('div');
     typingDiv.className = 'chat-message assistant-message typing';
+    typingDiv.textContent = 'Thinking...';
     chatMessages.appendChild(typingDiv);
     
     try {
@@ -732,14 +751,17 @@ async function sendMessage(message) {
         const data = await response.json();
         typingDiv.remove();
 
-        // Extract game code if present
+        // Extract game code if present and handle it
         const gameCodeMatch = data.message.match(/~~~gameCode~~~([\s\S]*?)~~~/);
         if (gameCodeMatch) {
-            const gameCode = gameCodeMatch[1];
-            // Remove the game code from the message
-            const cleanMessage = data.message.replace(/~~~gameCode~~~[\s\S]*?~~~/, '');
+            const gameCode = gameCodeMatch[1].trim();
+            const cleanMessage = data.message.replace(/~~~gameCode~~~[\s\S]*?~~~/, '').trim();
             await addMessage(cleanMessage, 'assistant');
-            initializeGamePreview(gameCode);
+            
+            // Small delay to ensure message is displayed before game initialization
+            setTimeout(() => {
+                initializeGamePreview(gameCode);
+            }, 100);
         } else {
             await addMessage(data.message, 'assistant');
         }
