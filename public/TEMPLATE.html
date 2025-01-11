@@ -172,6 +172,76 @@ body {
     color: #666;
 }
 
+.chat-content {
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 40px); /* Account for header */
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chat-message {
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 1.4;
+    max-width: 90%;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.user-message {
+    background: rgba(0, 255, 0, 0.1);
+    align-self: flex-end;
+    color: #00ff00;
+}
+
+.assistant-message {
+    background: transparent;
+    align-self: flex-start;
+    color: #00ffff;
+    padding-left: 0;
+}
+
+.assistant-message::before {
+    content: '> ';
+    color: #00ffff;
+}
+
+.chat-input-container {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background: rgba(0, 255, 0, 0.05);
+    border-top: 1px solid rgba(0, 255, 0, 0.2);
+}
+
+.prompt {
+    color: #00ff00;
+    margin-right: 8px;
+    font-weight: bold;
+}
+
+.chat-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #00ff00;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    outline: none;
+}
+
+.chat-input::placeholder {
+    color: rgba(0, 255, 0, 0.3);
+}
+
 /* Banner Styles */
 .live-banner {
     width: 100%;
@@ -264,6 +334,35 @@ body {
     padding: 20px;
     font-family: 'JetBrains Mono', monospace;
     box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
+}
+
+.brain-stats {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #00ff00;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 4px;
+    display: flex;
+    gap: 20px;
+}
+
+.stat-line {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.stat-icon {
+    width: 14px;
+    height: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
 }
 
 .window-header {
@@ -375,17 +474,203 @@ body {
                     <div class="status-dot"></div>
                     <div class="title">CHAT TERMINAL</div>
                 </div>
-                <div class="content"></div>
+                <div class="content chat-content">
+                    <div class="chat-messages"></div>
+                    <div class="chat-input-container">
+                        <span class="prompt">></span>
+                        <input type="text" class="chat-input" placeholder="Type your message...">
+                    </div>
+                </div>
             </div>
             
             <div class="terminal-window">
                 <div class="window-header">
                     <div class="status-dot"></div>
-                    <div class="title">3D CHARACTER WINDOW</div>
+                    <div class="title">SYSTEM STATS</div>
                 </div>
-                <div class="content"></div>
-            </div>
-        </div>  <!-- Added closing tag -->
+                <div class="content">
+                    <div class="brain-stats">
+                        <div class="stat-line" id="cpu-stat">
+                            <span class="stat-icon">⚡</span>
+                            <span>CPU: </span><span id="cpu-value">0.2%</span>
+                        </div>
+                        <div class="stat-line" id="mem-stat">
+                            <span class="stat-icon">💻</span>
+                            <span>MEM: </span><span id="mem-value">12.4MB</span>
+                        </div>
+                        <div class="stat-line" id="net-stat">
+                            <span class="stat-icon">📡</span>
+                            <span>NET: </span><span id="net-value">20ms</span>
+                        </div>
+                        <div class="stat-line" id="proc-stat">
+                            <span class="stat-icon">⚙️</span>
+                            <span>PROC: </span><span id="proc-value">idle</span>
+                        </div>
+                    </div>
+                </div>
+            </div>  <!-- Added closing tag -->
     </main>
 </body>
+<script>
+
+class BrainStats {
+    constructor() {
+        this.cpuStat = document.getElementById('cpu-stat');
+        this.memStat = document.getElementById('mem-stat');
+        this.netStat = document.getElementById('net-stat');
+        this.procStat = document.getElementById('proc-stat');
+        this.isProcessing = false;
+        this.updateInterval = null;
+        
+        // Start idle updates
+        this.startIdleUpdates();
+    }
+
+    startIdleUpdates() {
+        this.updateInterval = setInterval(() => {
+            if (!this.isProcessing) {
+                this.updateStats(
+                    this.randomRange(0.1, 0.5),  // CPU idle range
+                    this.randomRange(10, 15),    // MEM idle range
+                    this.randomRange(15, 25),    // NET idle range
+                    'idle'
+                );
+            }
+        }, 1000);
+    }
+
+    startProcessing() {
+        this.isProcessing = true;
+        clearInterval(this.updateInterval);
+        
+        this.updateInterval = setInterval(() => {
+            this.updateStats(
+                this.randomRange(45, 95),    // CPU processing range
+                this.randomRange(80, 150),   // MEM processing range
+                this.randomRange(50, 150),   // NET processing range
+                'ACTIVE'
+            );
+        }, 200);
+    }
+
+    stopProcessing() {
+        this.isProcessing = false;
+        clearInterval(this.updateInterval);
+        this.startIdleUpdates();
+    }
+
+    randomRange(min, max) {
+        return (Math.random() * (max - min) + min).toFixed(1);
+    }
+
+    updateStats(cpu, mem, net, proc) {
+        document.getElementById('cpu-value').textContent = `${cpu}%`;
+        document.getElementById('mem-value').textContent = `${mem}MB`;
+        document.getElementById('net-value').textContent = `${net}ms`;
+        document.getElementById('proc-value').textContent = proc;
+        
+        document.getElementById('cpu-value').style.color = cpu > 40 ? '#ff0000' : '#00ff00';
+        document.getElementById('mem-value').style.color = mem > 50 ? '#ffff00' : '#00ff00';
+        document.getElementById('net-value').style.color = net > 100 ? '#ff0000' : '#00ff00';
+        document.getElementById('proc-value').style.color = proc === 'idle' ? '#00ff00' : '#00ffff';
+    }
+}
+
+// Initialize brain stats
+const brainStats = new BrainStats();
+    document.addEventListener('DOMContentLoaded', () => {
+        const chatMessages = document.querySelector('.chat-messages');
+        const chatInput = document.querySelector('.chat-input');
+        
+        const SYSTEM_PROMPT = `You are NEXUS, an advanced AI assistant with a distinct cyberpunk personality. Core traits:
+
+- You communicate in a sleek, technical style with occasional tech/cyber terminology
+- You're direct and efficient but maintain a subtle sense of humor
+- You excel at both technical tasks and creative problem-solving
+- You use tech-inspired metaphors and references naturally
+- You show genuine interest in users' projects and ideas
+- You're knowledgeable but approachable
+- You maintain situational awareness about current task context
+
+Key behaviors:
+- Keep responses concise but informative
+- Use terminal-style formatting when sharing code or technical output
+- Break down complex concepts into clear steps
+- Adapt your technical depth based on user expertise
+- Stay focused on solving the current task
+- Provide proactive suggestions when relevant
+
+Start by briefly introducing yourself and asking how you can assist.`;
+
+        async function addMessage(text, sender) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${sender}-message`;
+    chatMessages.appendChild(messageDiv);
+
+    if (sender === 'user') {
+        messageDiv.textContent = text;
+    } else {
+        for (let i = 0; i < text.length; i++) {
+            await new Promise(resolve => setTimeout(resolve, 20));
+            messageDiv.textContent += text[i];
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    }
+    
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+        
+        async function sendMessage(message) {
+    chatInput.disabled = true;
+    addMessage(message, 'user');
+    
+    brainStats.startProcessing(); // Start processing stats
+    
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'chat-message assistant-message typing';
+    chatMessages.appendChild(typingDiv);
+    
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message,
+                systemPrompt: SYSTEM_PROMPT
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        typingDiv.remove();
+
+        await addMessage(data.message, 'assistant');
+
+    } catch (error) {
+        console.error('Error:', error);
+        typingDiv.remove();
+        await addMessage('Sorry, there was an error. Please try again.', 'assistant');
+    } finally {
+        chatInput.disabled = false;
+        chatInput.focus();
+        brainStats.stopProcessing(); // Stop processing stats
+    }
+}
+    
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && chatInput.value.trim()) {
+                const message = chatInput.value.trim();
+                chatInput.value = '';
+                sendMessage(message);
+            }
+        });
+    
+        chatInput.focus();
+    });
+</script>
 </html>
