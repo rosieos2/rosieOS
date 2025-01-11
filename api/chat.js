@@ -34,7 +34,7 @@ export default async function handler(req, res) {
                     role: 'user',
                     content: `Based on this message I received: "${message}", generate 3-5 lines of internal thought process from Jeff's perspective. Format each line starting with ">" and make them feel natural and childlike. Don't include any final response, just the thought process.`
                 }],
-                max_tokens: 150,
+                max_tokens: 1024,
                 temperature: 0.7
             })
         });
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
                     content: message
                 }],
                 system: systemPrompt,
-                max_tokens: 150,
+                max_tokens: 4096,
                 temperature: 0.7
             })
         });
