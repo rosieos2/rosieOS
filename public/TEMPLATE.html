@@ -336,6 +336,28 @@ body {
     box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
 }
 
+.preview-content {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    background: rgba(0, 255, 0, 0.05);
+}
+
+#gameCanvas {
+    display: block;
+    margin: 0 auto;
+    background: #000;
+}
+
+#gameContainer {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .brain-stats {
     position: absolute;
     top: 2px;  /* Changed from 10px to 5px */
@@ -460,14 +482,16 @@ body {
     </nav>
 
     <main class="main-content">
-        <div class="terminal-grid">  <!-- The terminals need to be inside this grid container -->
-            <div class="terminal-window">
-                <div class="window-header">
-                    <div class="status-dot"></div>
-                    <div class="title">LIVE PREVIEW</div>
-                </div>
-                <div class="content"></div>
+        <div class="terminal-window">
+            <div class="window-header">
+                <div class="status-dot"></div>
+                <div class="title">LIVE PREVIEW</div>
             </div>
+            <div class="content preview-content">
+                <canvas id="gameCanvas"></canvas>
+                <div id="gameContainer"></div>
+            </div>
+        </div>
             
             <div class="terminal-window">
                 <div class="window-header">
@@ -623,12 +647,44 @@ Start by asking what type of browser game they'd like to create.`;
     
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
+
+function initializeGamePreview(code) {
+    const gameContainer = document.getElementById('gameContainer');
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Reset the game container
+    gameContainer.innerHTML = '';
+    
+    // Set canvas size
+    canvas.width = gameContainer.clientWidth * 0.9;  // 90% of container width
+    canvas.height = gameContainer.clientHeight * 0.9;
+
+    try {
+        // Create a safe execution context with game-specific utilities
+        const gameContext = {
+            canvas: canvas,
+            ctx: ctx,
+            container: gameContainer,
+            width: canvas.width,
+            height: canvas.height
+        };
+
+        // Execute the game code with the game context
+        const gameFunction = new Function('game', code);
+        gameFunction(gameContext);
         
-        async function sendMessage(message) {
+    } catch (error) {
+        console.error('Game execution error:', error);
+        gameContainer.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+    }
+}
+        
+async function sendMessage(message) {
     chatInput.disabled = true;
     addMessage(message, 'user');
     
-    brainStats.startProcessing(); // Start processing stats
+    brainStats.startProcessing();
     
     const typingDiv = document.createElement('div');
     typingDiv.className = 'chat-message assistant-message typing';
@@ -655,6 +711,11 @@ Start by asking what type of browser game they'd like to create.`;
 
         await addMessage(data.message, 'assistant');
 
+        // Check if response contains game code
+        if (data.gameCode) {
+            initializeGamePreview(data.gameCode);
+        }
+
     } catch (error) {
         console.error('Error:', error);
         typingDiv.remove();
@@ -662,7 +723,7 @@ Start by asking what type of browser game they'd like to create.`;
     } finally {
         chatInput.disabled = false;
         chatInput.focus();
-        brainStats.stopProcessing(); // Stop processing stats
+        brainStats.stopProcessing();
     }
 }
     
