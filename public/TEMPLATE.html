@@ -696,6 +696,11 @@ function initializeGamePreview(code) {
         window.currentGame.cleanup();
     }
     
+    // Set canvas size to match container
+    const containerRect = gameContainer.getBoundingClientRect();
+    canvas.width = containerRect.width * 0.95;
+    canvas.height = containerRect.height * 0.95;
+    
     // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
@@ -709,7 +714,7 @@ function initializeGamePreview(code) {
             container: gameContainer
         };
 
-        // Create and execute game function with proper error handling
+        // Create and execute game function
         const gameFunction = new Function('game', code);
         window.currentGame = gameFunction(gameContext);
         
