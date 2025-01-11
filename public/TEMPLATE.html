@@ -3,359 +3,238 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ConjureAI Platform</title>
+    <title>DJ AI Platform</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-}
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
 
-html, body {
-    margin: 0;
-    padding: 0;
-    height: 100vh;
-    background-color: #000000;
-    color: #fff;
-    overflow: hidden;
-}
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background-color: #000000;
+            color: #fff;
+            overflow: hidden;
+        }
 
-body {
-    display: flex;
-}
+        body {
+            display: flex;
+        }
 
-/* Sidebar Styles */
-.sidebar {
-    width: 240px;
-    height: 100vh;
-    background: #000000;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 32px;
-    position: fixed;
-    left: 0;
-    top: 0;
-    border-right: 0.5px solid;
-    border-image: linear-gradient(to bottom, #00ff00, #00ffff, #ff00ff, #00ff00) 1;
-    animation: borderFlow 5s linear infinite;
-}
+        /* Sidebar Styles */
+        .sidebar {
+            width: 240px;
+            height: 100vh;
+            background: #000000;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            border-right: 0.5px solid;
+            border-image: linear-gradient(to bottom, #00ff00, #00ffff, #ff00ff, #00ff00) 1;
+            animation: borderFlow 5s linear infinite;
+        }
 
-.sidebar::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(125deg, 
-        rgba(0, 255, 0, 0.1),
-        rgba(0, 255, 255, 0.1),
-        rgba(0, 153, 255, 0.1),
-        rgba(0, 255, 0, 0.1)
-    );
-    background-size: 400% 400%;
-    z-index: -1;
-    animation: gradientMove 10s linear infinite;
-    opacity: 0.1;
-}
+        .logo-container {
+            position: relative;
+            padding-bottom: 12px;
+            padding-top: 40px;
+            margin-bottom: 16px;
+            width: 100%;
+        }
 
-/* Logo Styles */
-.logo-container {
-    position: relative;
-    padding-bottom: 12px;
-    padding-top: 40px;
-    margin-bottom: 16px;
-    width: 100%;
-}
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            text-decoration: none;
+        }
 
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px;
-    text-decoration: none;
-}
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #00ff00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+        }
 
-.logo-icon {
-    width: 32px;
-    height: 32px;
-    background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid #00ff00;
-    box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
-}
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            background-color: #000000;
+            width: calc(100% - 280px);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 40px;
+            position: absolute;
+            left: calc(50% + 120px);
+            transform: translateX(-50%);
+            z-index: 0;
+        }
 
-.logo-text {
-    display: flex;
-    flex-direction: column;
-}
+        /* Updated Terminal Grid */
+        .terminal-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: 400px 300px; /* Larger first row for DJ deck */
+            gap: 24px;
+            padding: 20px;
+            height: calc(100vh - 80px);
+        }
 
-.logo-title {
-    color: #00ff00;
-    font-size: 16px;
-    font-weight: 500;
-    letter-spacing: 0.5px;
-    text-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
-}
+        /* Terminal Window Styles */
+        .terminal-window {
+            background: #000000;
+            border: 1px solid #00ff00;
+            border-radius: 12px;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            padding: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
+        }
 
-.logo-subtitle {
-    color: #4d4d4d;
-    font-size: 12px;
-}
+        .window-header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+            z-index: 20;
+        }
 
-.logo-underline {
-    position: absolute;
-    bottom: 0;
-    left: -16px;
-    width: calc(100% + 32px);
-    height: 0.5px;
-    background: linear-gradient(to right, #00ff00, #00ffff, #ff00ff, #00ff00);
-    animation: borderFlow 5s linear infinite;
-}
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff00;
+            margin-right: 10px;
+            animation: blink 2s infinite;
+        }
 
-/* Navigation Items */
-.nav-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
-    color: #fff;
-    text-decoration: none;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    position: relative;
-}
+        .title {
+            color: #00ff00;
+            font-family: 'JetBrains Mono', monospace;
+            flex-grow: 1;
+        }
 
-.nav-item:hover {
-    background: linear-gradient(to right, rgba(0, 255, 0, 0.05), transparent);
-    transform: translateX(4px);
-}
+        /* DJ Timeline specific styles */
+        .dj-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 20px;
+            height: calc(100% - 40px);
+        }
 
-.nav-item svg {
-    width: 20px;
-    height: 20px;
-    color: #808080;
-    transition: all 0.3s ease;
-}
+        .timeline-grid {
+            display: grid;
+            grid-template-rows: repeat(8, 1fr);
+            gap: 5px;
+            height: 100%;
+            background: rgba(0, 255, 0, 0.05);
+            border-radius: 8px;
+            padding: 10px;
+        }
 
-.nav-item:hover svg {
-    color: #00ff00;
-    transform: scale(1.1);
-}
+        .timeline-row {
+            height: 30px;
+            background: rgba(0, 255, 0, 0.1);
+            border-radius: 4px;
+            position: relative;
+        }
 
-.nav-content {
-    display: flex;
-    flex-direction: column;
-}
+        /* Chat specific styles */
+        .chat-content {
+            display: flex;
+            flex-direction: column;
+            height: calc(100% - 40px);
+        }
 
-.nav-title {
-    color: #fff;
-    font-size: 14px;
-}
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
 
-.nav-subtitle {
-    color: #4d4d4d;
-    font-size: 12px;
-}
+        .chat-input-container {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: rgba(0, 255, 0, 0.05);
+            border-top: 1px solid rgba(0, 255, 0, 0.2);
+        }
 
-.nav-item:hover .nav-title {
-    color: #00ff00;
-}
+        .chat-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #00ff00;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 8px;
+            outline: none;
+        }
 
-.nav-item:hover .nav-subtitle {
-    color: #666;
-}
+        /* Terminal positioning */
+        .terminal-window:nth-child(1) { /* DJ Timeline */
+            grid-column: 1 / span 2;
+            grid-row: 1;
+        }
 
-/* Banner Styles */
-.live-banner {
-    width: 100%;
-    background: #000;
-    border-bottom: 1px solid rgba(0, 255, 0, 0.2);
-    overflow: hidden;
-    height: 40px;
-    z-index: 20;
-}
+        .terminal-window:nth-child(2) { /* Chat */
+            grid-column: 1;
+            grid-row: 2;
+        }
 
-.status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #00ff00;
-    margin-right: 10px;
-    animation: blink 2s infinite;
-}
+        .terminal-window:nth-child(3) { /* 3D Character */
+            grid-column: 2;
+            grid-row: 2;
+        }
 
-/* Add this animation */
-@keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-}
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
 
-.banner-scroll {
-    padding: 8px 0;
-    display: flex;
-    gap: 20px;
-    animation: slideLeft 20s linear infinite;
-}
-
-.banner-item {
-    color: #00ff00;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
-    text-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
-    white-space: nowrap;
-}
-
-/* Main Content Area */
-.main-content {
-    flex: 1;
-    background-color: #000000;
-    width: calc(100% - 280px);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    padding: 40px;
-    position: absolute;
-    left: calc(50% + 120px);
-    transform: translateX(-50%);
-    z-index: 0;
-}
-
-.terminal-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);  /* Two equal columns */
-    grid-template-rows: 300px 400px;        /* Increased first row height to 300px */
-    gap: 24px;
-    padding: 20px;
-    height: calc(100vh - 80px);
-}
-
-.terminal-window:nth-child(1) { /* Live Preview */
-    grid-column: 1 / span 2; /* Span both columns */
-    grid-row: 1;
-}
-
-.terminal-window:nth-child(2) { /* Chat Terminal */
-    grid-column: 1;
-    grid-row: 2;
-}
-
-.terminal-window:nth-child(3) { /* 3D Character Window */
-    grid-column: 2;
-    grid-row: 2;
-}
-
-/* Terminal Window Styles */
-.terminal-window {
-    background: #000000;
-    border: 1px solid #00ff00;
-    border-radius: 12px;
-    width: 100%;
-    height: 100%;
-    position: relative;
-    padding: 20px;
-    font-family: 'JetBrains Mono', monospace;
-    box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
-}
-
-.window-header {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 10px;
-    display: flex;
-    align-items: center;
-    border-bottom: 1px solid rgba(0, 255, 0, 0.2);
-}
-
-.title {
-    color: #00ff00;
-    font-family: 'JetBrains Mono', monospace;
-    flex-grow: 1;
-}
-
-/* Animations */
-@keyframes borderFlow {
-    0% { border-image: linear-gradient(to bottom, #00ff00, #00ffff, #ff00ff, #00ff00) 1; }
-    25% { border-image: linear-gradient(to bottom, #00ff00, #00ff00, #00ffff, #ff00ff) 1; }
-    50% { border-image: linear-gradient(to bottom, #ff00ff, #00ff00, #00ff00, #00ffff) 1; }
-    75% { border-image: linear-gradient(to bottom, #00ffff, #ff00ff, #00ff00, #00ff00) 1; }
-    100% { border-image: linear-gradient(to bottom, #00ff00, #00ffff, #ff00ff, #00ff00) 1; }
-}
-
-@keyframes gradientMove {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-@keyframes slideLeft {
-    0% { transform: translateX(100%); }
-    100% { transform: translateX(-100%); }
-}
+        @keyframes borderFlow {
+            0% { border-image: linear-gradient(to bottom, #00ff00, #00ffff, #ff00ff, #00ff00) 1; }
+            25% { border-image: linear-gradient(to bottom, #00ff00, #00ff00, #00ffff, #ff00ff) 1; }
+            50% { border-image: linear-gradient(to bottom, #ff00ff, #00ff00, #00ff00, #00ffff) 1; }
+            75% { border-image: linear-gradient(to bottom, #00ffff, #ff00ff, #00ff00, #00ff00) 1; }
+            100% { border-image: linear-gradient(to bottom, #00ff00, #00ffff, #ff00ff, #00ff00) 1; }
+        }
     </style>
 </head>
 <body>
-    <div class="live-banner">
-        <div class="banner-scroll">
-            <div class="banner-content">
-                <span class="banner-item">[04:20 PM] Cyber Dark Theme Placeholder</span>
-                <span class="banner-item">[05:36 AM] Hypothetical Solana MEV Bot</span>
-                <span class="banner-item">[04:23 AM] Solana Token Contract</span>
-                <span class="banner-item">[04:19 AM] 3D Racing Game</span>
-                <span class="banner-item">[11:19 PM] Higher or Lower Game</span>
-            </div>
-        </div>
-    </div>
     <nav class="sidebar">
         <div class="logo-container">
             <a href="#" class="logo">
                 <div class="logo-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#00ff00" stroke-width="2">
+                        <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
                     </svg>
                 </div>
                 <div class="logo-text">
-                    <span class="logo-title">ConjureAI</span>
-                    <span class="logo-subtitle">Agent Platform</span>
+                    <span class="logo-title" style="color: #00ff00">DJ AI</span>
+                    <span class="logo-subtitle" style="color: #4d4d4d">Music Creator</span>
                 </div>
             </a>
-            <div class="logo-underline"></div>
         </div>
-
-        <a href="#" class="nav-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 4v16m-8-8h16"/>
-            </svg>
-            <div class="nav-content">
-                <span class="nav-title">AI Agents Library</span>
-                <span class="nav-subtitle">Select an Agent</span>
-            </div>
-        </a>
-
-        <a href="#" class="nav-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-            </svg>
-            <div class="nav-content">
-                <span class="nav-title">Agent Creations Vault</span>
-                <span class="nav-subtitle">View past creations</span>
-            </div>
-        </a>
-
-        <a href="#" class="nav-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
-            </svg>
-            <div class="nav-content">
-                <span class="nav-title">GitHub</span>
-                <span class="nav-subtitle">View Source Code</span>
-            </div>
-        </a>
     </nav>
 
     <main class="main-content">
@@ -363,25 +242,36 @@ body {
             <div class="terminal-window">
                 <div class="window-header">
                     <div class="status-dot"></div>
-                    <div class="title">LIVE PREVIEW</div>
+                    <div class="title">TRACK TIMELINE & DJ DECK</div>
                 </div>
-                <div class="content"></div>
+                <div class="content dj-timeline">
+                    <div class="timeline-grid">
+                        <!-- Timeline rows will be added here -->
+                    </div>
+                </div>
             </div>
             
             <div class="terminal-window">
                 <div class="window-header">
                     <div class="status-dot"></div>
-                    <div class="title">CHAT TERMINAL</div>
+                    <div class="title">DJ AI CHAT</div>
                 </div>
-                <div class="content"></div>
+                <div class="content chat-content">
+                    <div class="chat-messages"></div>
+                    <div class="chat-input-container">
+                        <input type="text" class="chat-input" placeholder="Tell DJ AI how to modify the track...">
+                    </div>
+                </div>
             </div>
             
             <div class="terminal-window">
                 <div class="window-header">
                     <div class="status-dot"></div>
-                    <div class="title">3D CHARACTER WINDOW</div>
+                    <div class="title">DJ CHARACTER</div>
                 </div>
-                <div class="content"></div>
+                <div class="content">
+                    <!-- 3D Character will be rendered here -->
+                </div>
             </div>
         </div>
     </main>
