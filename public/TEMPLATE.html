@@ -687,6 +687,8 @@ Remember to keep explanations clear and focused on game development implementati
 }
 
 function initializeGamePreview(code) {
+    console.log("Initializing game with code:", code); // Debug log
+    
     const gameContainer = document.getElementById('gameContainer');
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -698,8 +700,12 @@ function initializeGamePreview(code) {
     
     // Set canvas size to match container
     const containerRect = gameContainer.getBoundingClientRect();
+    console.log("Container size:", containerRect.width, containerRect.height); // Debug log
+    
     canvas.width = containerRect.width * 0.95;
     canvas.height = containerRect.height * 0.95;
+    
+    console.log("Canvas size set to:", canvas.width, canvas.height); // Debug log
     
     // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -715,8 +721,11 @@ function initializeGamePreview(code) {
         };
 
         // Create and execute game function
+        console.log("Creating game function..."); // Debug log
         const gameFunction = new Function('game', code);
+        console.log("Executing game function..."); // Debug log
         window.currentGame = gameFunction(gameContext);
+        console.log("Game initialized"); // Debug log
         
     } catch (error) {
         console.error('Game execution error:', error);
