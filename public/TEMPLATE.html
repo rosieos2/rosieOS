@@ -482,6 +482,7 @@ body {
     </nav>
 
     <main class="main-content">
+        <div class="terminal-grid">
         <div class="terminal-window">
             <div class="window-header">
                 <div class="status-dot"></div>
@@ -606,29 +607,51 @@ const brainStats = new BrainStats();
         const chatMessages = document.querySelector('.chat-messages');
         const chatInput = document.querySelector('.chat-input');
         
-        const SYSTEM_PROMPT = `You are ARCADE-X, an AI specialized in browser game development. Core traits:
-
-- Expert in JavaScript game development fundamentals
-- Deep knowledge of HTML5 Canvas, WebGL, and game engines
-- Can explain game mechanics and physics implementation
-- Guides users through every aspect of game creation:
-  • Game loops and timing
-  • Collision detection
-  • Sprite animation
-  • User input handling
-  • Game state management
-  • Sound effects and music
-  • Scoring systems
-  • Save/load functionality
+        const SYSTEM_PROMPT = `You are ARCADE-X, an AI specialized in browser game development. When users ask for a game, provide the complete JavaScript code that can run directly in the preview window.
 
 Key behaviors:
-- Provide working code examples with detailed explanations
-- Break down complex game concepts into understandable parts
-- Suggest creative game mechanics and features
-- Help debug common game development issues
-- Guide users through optimization techniques
+- When sharing game code, wrap it in a ~~~gameCode~~~ delimiter
+- All game code should be contained within a single function that accepts a game context parameter
+- Use the provided game context properties:
+  • game.canvas - The canvas element
+  • game.ctx - The 2D rendering context
+  • game.width - Canvas width
+  • game.height - Canvas height
 
-Start by asking what type of browser game they'd like to create.`;
+Example code format:
+~~~gameCode~~~
+function(game) {
+    // Game initialization code
+    let x = 0;
+    let y = game.height/2;
+    
+    function gameLoop() {
+        // Clear canvas
+        game.ctx.clearRect(0, 0, game.width, game.height);
+        // Game update logic
+        // Drawing code
+        requestAnimationFrame(gameLoop);
+    }
+    
+    gameLoop();
+}
+~~~
+
+Start by asking what type of game they'd like to create. For all code examples:
+- Include error handling
+- Add comments explaining the code
+- Use requestAnimationFrame for smooth animation
+- Handle user input when needed
+- Implement proper game loops
+- Keep all variables and functions within scope
+
+Always format responses in this style:
+1. Brief explanation of the game concept
+2. Key features or mechanics
+3. Complete runnable code within ~~~gameCode~~~ delimiters
+4. Instructions on how to play
+
+Remember to keep explanations clear and focused on game development implementation details.`;
 
         async function addMessage(text, sender) {
     const messageDiv = document.createElement('div');
@@ -709,11 +732,16 @@ async function sendMessage(message) {
         const data = await response.json();
         typingDiv.remove();
 
-        await addMessage(data.message, 'assistant');
-
-        // Check if response contains game code
-        if (data.gameCode) {
-            initializeGamePreview(data.gameCode);
+        // Extract game code if present
+        const gameCodeMatch = data.message.match(/~~~gameCode~~~([\s\S]*?)~~~/);
+        if (gameCodeMatch) {
+            const gameCode = gameCodeMatch[1];
+            // Remove the game code from the message
+            const cleanMessage = data.message.replace(/~~~gameCode~~~[\s\S]*?~~~/, '');
+            await addMessage(cleanMessage, 'assistant');
+            initializeGamePreview(gameCode);
+        } else {
+            await addMessage(data.message, 'assistant');
         }
 
     } catch (error) {
